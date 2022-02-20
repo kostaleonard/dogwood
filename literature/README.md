@@ -63,6 +63,18 @@ domain(s) to improve the performance of the learned decision function(s) `f^Tj`
 * Feature space: A feature space `Chi` is the cartesian product of the range of
 values for all features. Inferred from [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com).
 
+* Marginal distribution: The probability `P(X)` of any given combination of
+feature values occurring. Inferred from [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com).
+
+* Conditional distribution: The probability `P(Y | X)` of labels `Y` conditioned
+on the instance set of features `X`. Notably, different marginal distributions
+`P(X1)` and `P(X2)` could still have the same conditional distribution, e.g.,
+because of differences in sampling (suppose `X1` is the set of features drawn
+from young people and `X2` is the set of features drawn from elderly people; the
+conditional distribution `P(Y | X)` measuring the likelihood that a person has
+cancer is the same regardless of the differences between `P(X1)` and `P(X2)`).
+Inferred from [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com).
+
 * Domain: A domain `D` is composed of a feature space `Chi` and a marginal
 distribution `P(X)`, i.e., `D = {Chi, P(X)}`. The symbol `X` denotes an instance
 set, which is defined as `X = {x | xi in Chi, i = 1, ..., n}`. In other words,
@@ -124,12 +136,16 @@ target learner performance. [Zhuang, 2020. A Comprehensive Survey on Transfer Le
 
 * Transfer learning solution categories [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf):
 
-    * Instance-based: Based on instance weighting strategies.
+    * Instance-based: Based on instance weighting strategies. This is most often
+    used when the source and target domains differ only in marginal
+    distributions, so the examples from the source domain most relevant to the
+    target domain are weighted higher in the target learner's loss function.
     
     * Feature-based: Transform the original features to create a new feature
     representation. Asymmetric approaches transform source features to match the
     target ones; symmetric approaches attempt to find a common latent feature
-    space.
+    space. The goal is to minimize the marginal and conditional distribution
+    difference between source and target domain instances.
     
     * Parameter-based: Transfer knowledge at the model/parameter level.
     
