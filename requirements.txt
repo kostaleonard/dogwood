@@ -3,3 +3,8 @@ pytest
 pytest-cov
 build
 twine
+mloperations
+notebook
+tensorflow
+h5py
+matplotlib
