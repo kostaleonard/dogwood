@@ -8,3 +8,4 @@ notebook
 tensorflow
 h5py
 matplotlib
+sklearn
