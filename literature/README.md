@@ -39,6 +39,11 @@ This directory contains the literature review and associated files.
     loss term/regularizer to minimize the "distance" between the intermediate
     (i.e., latent) representations of the source and target distributions.
     
+    Contains good general insights, but focused on transfer learning in the
+    traditional ML setting, not really deep transfer learning. Notes that
+    adversarial learning is very powerful in deep transfer learning based on
+    experimental results.
+    
     Suggested future work: measuring the transferability across domains and
     avoiding negative transfer; interpretability of transfer learning
     techniques.
@@ -56,11 +61,6 @@ This directory contains the literature review and associated files.
     TODO although this is focused on vision systems, the deep learning aspect
     could be very informative.
 
-5. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
-
-    TODO Explores "adaptation layers" and a "discrepancy loss" for training
-    autoencoders for domain transfer.
-
 ## Topic papers
 
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
@@ -68,6 +68,26 @@ This directory contains the literature review and associated files.
     TODO
 
 2. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
+
+    TODO
+
+3. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
+
+    TODO Explores "adaptation layers" and a "discrepancy loss" for training
+    autoencoders for domain transfer.
+
+4. Masqood, 2019. Transfer learning assisted classification and detection of
+Alzheimer's disease stages using 3D MRI scans.
+
+    TODO Recent example of deep transfer learning techniques in a biomedical
+    setting. The biomedical aspect is not what is interesting; this is a recent
+    example of how deep transfer learning is actually used in SOTA applications.
+
+5. Wang, 2019. Characterizing and avoiding negative transfer.
+
+    TODO
+
+6. Lipton, 2018. The mythos of model interpretability.
 
     TODO
 
@@ -179,7 +199,7 @@ target learner performance. [Zhuang, 2020. A Comprehensive Survey on Transfer Le
 
 * Partial transfer learning: Approaches designed for the scenario in which the
 target domain classes are a subset of the source domain classes. TODO this
-description could be wrong based on the description in the paper.
+description could be wrong based on the description in the paper. See #17. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com).
 
 * Reinforcement transfer learning: TODO
 
