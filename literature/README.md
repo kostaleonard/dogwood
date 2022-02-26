@@ -8,6 +8,7 @@ This directory contains the literature review and associated files.
 * [Topic papers](#topic-papers)
 * [Key terms](#key-terms)
 * [Questions](#questions)
+* [Thoughts](#thoughts)
 
 ## Survey papers
 
@@ -24,7 +25,19 @@ This directory contains the literature review and associated files.
     but requires that you can collect large amounts of unlabeled data in
     addition to some labeled data. It is possible to achieve better results by
     transferring knowledge from/to more than one domain. It seems that we are
-    most interested in parameter-based transfer learning.
+    most interested in parameter-based transfer learning. Many of the methods
+    discussed add regularizers for training the target model from scratch,
+    rather than devising methods to shorten training time by starting with some
+    pretrained weights. We may be able to use parameter restriction techniques
+    (as opposed to parameter sharing) in the deep transfer setting. Due to
+    differences in source/target distributions, directly combining data or
+    models may not be successful, which is why some researchers use data-based
+    approaches to transfer learning or model ensembling. Deep learning
+    approaches to transfer learning include stacked autoencoders (SDA, mSLDA,
+    TLDA) and adversarial deep learning (GAN--although not sure this really
+    counts, DANN). Deep learning approaches often add a distribution adaptation
+    loss term/regularizer to minimize the "distance" between the intermediate
+    (i.e., latent) representations of the source and target distributions.
     
     Suggested future work: measuring the transferability across domains and
     avoiding negative transfer; interpretability of transfer learning
@@ -43,9 +56,18 @@ This directory contains the literature review and associated files.
     TODO although this is focused on vision systems, the deep learning aspect
     could be very informative.
 
+5. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
+
+    TODO Explores "adaptation layers" and a "discrepancy loss" for training
+    autoencoders for domain transfer.
+
 ## Topic papers
 
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
+
+    TODO
+
+2. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
     TODO
 
@@ -147,17 +169,41 @@ target learner performance. [Zhuang, 2020. A Comprehensive Survey on Transfer Le
     space. The goal is to minimize the marginal and conditional distribution
     difference between source and target domain instances.
     
-    * Parameter-based: Transfer knowledge at the model/parameter level.
+    * Parameter-based: Transfer knowledge at the model/parameter level. This
+    category includes parameter sharing, which is a key technique in deep
+    transfer learning.
     
     * Relational-based: Focus on problems in relational domains; transfer the
     logical relationship or rules learned in the source domain to the target
     domain.
+
+* Partial transfer learning: Approaches designed for the scenario in which the
+target domain classes are a subset of the source domain classes. TODO this
+description could be wrong based on the description in the paper.
 
 * Reinforcement transfer learning: TODO
 
 * Lifelong transfer learning: TODO
 
 * Online transfer learning: TODO
+
+* Kernel trick: TODO
+
+* Incremental learning: TODO
+
+* Consensus regularizer: An additional loss term that promotes agreement between
+two or more models, often in the form of cross-entropy. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
+
+* Parameter sharing: A method of transferring the knowledge from a source model
+to a target model in which the target model freezes (i.e., shares) some of the
+source model parameters, and only finetunes a portion (in deep transfer
+learning, traditionally the last few layers of the neural network). In
+traditional ML, matrix factorization is a popular strategy. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com)
+
+* Parameter restriction: A method of transferring the knowledge from a source
+model to a target model in which the target model uses similar, but not
+necessarily identical weights as the source model; a variant on parameter
+sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com)
 
 ## Questions
 
@@ -168,3 +214,10 @@ target learners on target domains by transferring the knowledge contained in
 different but related source **learners**? In our work, we aim to do both, i.e.,
 improve the performance of target learners on target domains by transferring the
 knowledge contained in different but related source **learners and/or domains**.
+
+## Thoughts
+
+* The purpose of matrix multiplication `AB` is to transform the row vectors in
+`A` to row vectors in a new subspace. If `A` is `m x n` and `B` is `n x o`, then
+the columns of `B` describe the linear transformations from `n`-dimensional
+space to `o`-dimensional space.
