@@ -47,6 +47,7 @@ def expand_dense_layer(
     """
     # TODO raise error if not dense layer
     # TODO add support for arbitrary architectures
+    return model
 
 
 def expand_dense_layers(
@@ -74,3 +75,4 @@ def expand_dense_layers(
     """
     # TODO define in terms of expand_dense_layer()
     # TODO add support for arbitrary architectures
+    return model
