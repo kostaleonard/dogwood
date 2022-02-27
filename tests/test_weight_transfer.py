@@ -10,10 +10,14 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten, Dense
 from dogwood.errors import NotADenseLayerError
 from dogwood.weight_transfer import expand_dense_layer, expand_dense_layers, \
-    STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM
+    STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM, \
+    are_symmetric_dense_neurons
 
 MAX_PIXEL_VALUE = 255
 MNIST_IMAGE_SHAPE = (28, 28)
+MICRO_INPUT_LEN = 2
+MICRO_HIDDEN_LEN = 4
+MICRO_OUTPUT_LEN = 3
 
 
 @pytest.fixture(scope='session')
@@ -31,7 +35,7 @@ def mnist_dataset() -> Tuple[Tuple[np.ndarray, np.ndarray],
 
 
 @pytest.fixture
-def baseline_model() -> Sequential:
+def mnist_model() -> Sequential:
     """Returns the baseline model for use on MNIST.
 
     :return: The baseline model for use on MNIST.
@@ -47,115 +51,209 @@ def baseline_model() -> Sequential:
     return model
 
 
-def test_are_symmetric_dense_neurons_one_neuron() -> None:
-    """Tests that one neuron is always considered symmetric."""
-    # TODO
-    assert False
+@pytest.fixture
+def micro_symmetry_model() -> Sequential:
+    """Returns the small model used in weight symmetry tests.
+
+    :return: The small model used in weight symmetry tests.
+    """
+    model = Sequential([
+        Dense(MICRO_HIDDEN_LEN, activation='relu', name='dense_1',
+              input_shape=(MICRO_INPUT_LEN,)),
+        Dense(MICRO_OUTPUT_LEN, activation='relu', name='dense_2')
+    ])
+    model.compile()
+    return model
 
 
-def test_are_symmetric_dense_neurons_symmetric() -> None:
-    """Tests that deliberately symmetric neurons are considered symmetric."""
-    # TODO
-    assert False
+@pytest.fixture
+def micro_symmetry_dataset() -> Tuple[np.ndarray, np.ndarray]:
+    """Returns a training dataset for the micro symmetry model.
+
+    :return: A training dataset for the micro symmetry model as X_train,
+        y_train.
+    """
+    num_examples = 5
+    X_train = np.arange(
+        num_examples * MICRO_INPUT_LEN, dtype=np.float32).reshape(
+        (num_examples, MICRO_INPUT_LEN))
+    y_train = 2 * np.arange(
+        num_examples * MICRO_OUTPUT_LEN, dtype=np.float32).reshape(
+        (num_examples, MICRO_OUTPUT_LEN))
+    return X_train, y_train
 
 
-def test_are_symmetric_dense_neurons_constant_initialized() -> None:
-    """Tests that a model whose weights were initialized to 0 causes weight
-    symmetry."""
-    # TODO
-    assert False
+def test_are_symmetric_dense_neurons_one_neuron(
+        micro_symmetry_model: Sequential) -> None:
+    """Tests that one neuron is always considered symmetric.
+
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    """
+    for layer_name in 'dense_1', 'dense_2':
+        for neuron_idx in range(micro_symmetry_model.get_layer(
+                layer_name).units):
+            assert are_symmetric_dense_neurons(
+                micro_symmetry_model, layer_name, {neuron_idx})
 
 
-def test_are_symmetric_dense_neurons_asymmetric() -> None:
+def test_are_symmetric_dense_neurons_symmetric(
+        micro_symmetry_model: Sequential,
+        micro_symmetry_dataset: Tuple[np.ndarray, np.ndarray]) -> None:
+    """Tests that deliberately symmetric neurons are considered symmetric.
+
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    :param micro_symmetry_dataset: The training dataset for the model.
+    """
+    # Deliberately set the weights of neurons 3 and 4 in dense_1.
+    weights = micro_symmetry_model.get_weights()
+    # Weights in.
+    weights[0][:, 2:4] = np.ones((2, 2))
+    # Biases in.
+    weights[1][2:4] = np.ones((2,))
+    # Weights out.
+    weights[2][2:4, :] = np.ones((2, 3))
+    micro_symmetry_model.set_weights(weights)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+    X_train, y_train = micro_symmetry_dataset
+    micro_symmetry_model.fit(X_train, y_train, epochs=5)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+
+
+def test_are_symmetric_dense_neurons_constant_initialized_trained(
+        micro_symmetry_model: Sequential,
+        micro_symmetry_dataset: Tuple[np.ndarray, np.ndarray]) -> None:
+    """Tests that a model whose weights were initialized to a constant has
+    weight symmetry even after training.
+    
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    :param micro_symmetry_dataset: The training dataset for the model.
+    """
+    weights = micro_symmetry_model.get_weights()
+    for idx, layer_weights in enumerate(weights):
+        weights[idx] = np.ones_like(layer_weights)
+    micro_symmetry_model.set_weights(weights)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_1', set(range(MICRO_HIDDEN_LEN)))
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_2', set(range(MICRO_OUTPUT_LEN)))
+    X_train, y_train = micro_symmetry_dataset
+    micro_symmetry_model.fit(X_train, y_train, epochs=5)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_1', set(range(MICRO_HIDDEN_LEN)))
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_2', set(range(MICRO_OUTPUT_LEN)))
+
+
+def test_are_symmetric_dense_neurons_asymmetric(
+        micro_symmetry_model: Sequential) -> None:
     """Tests that a model whose weights were randomly initialized causes no
-    weights symmetry."""
-    # TODO
-    assert False
+    weights symmetry.
+    
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    """
+    # Pick two arbitrary neuron indices.
+    neuron_indices = {0, 1}
+    assert not are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_1', neuron_indices)
+    assert not are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_2', neuron_indices)
 
 
-def test_are_symmetric_dense_neurons_raises_error() -> None:
+def test_are_symmetric_dense_neurons_raises_error(
+        mnist_model: Sequential) -> None:
     """Tests that are_symmetric_dense_neurons raises a NotADenseLayerError when
-    supplied with a non-dense layer."""
-    # TODO
-    assert False
+    supplied with a non-dense layer.
+
+    :param mnist_model: The baseline model.
+    """
+    with pytest.raises(NotADenseLayerError):
+        _ = are_symmetric_dense_neurons(mnist_model, 'flatten', {0})
 
 
 def test_expand_dense_layer_increases_layer_size(
-        baseline_model: Sequential) -> None:
+        mnist_model) -> None:
     """Tests that expand_dense_layer increases the size of the given layer.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     """
     num_new_neurons = 5
-    expanded = expand_dense_layer(baseline_model, 'dense_1', num_new_neurons)
+    expanded = expand_dense_layer(mnist_model, 'dense_1', num_new_neurons)
     assert expanded.get_layer('dense_1').units == \
-        baseline_model.get_layer('dense_1').units + num_new_neurons
+           mnist_model.get_layer('dense_1').units + num_new_neurons
 
 
 def test_expand_dense_layer_all_zero_same_output(
-        baseline_model: Sequential) -> None:
+        mnist_model) -> None:
     """Tests that the all zero strategy does not change model output.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        baseline_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert np.isclose(baseline_model(batch), expanded(batch)).all()
+    assert np.isclose(mnist_model(batch), expanded(batch)).all()
 
 
 def test_expand_dense_layer_all_zero_causes_weight_symmetry(
-        baseline_model: Sequential,
+        mnist_model,
         mnist_dataset: Tuple[Tuple[np.ndarray, np.ndarray],
                              Tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the all zero strategy causes weight symmetry when the model
     is fine-tuned.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     :param mnist_dataset: The MNIST dataset.
     """
     (X_train, y_train), _ = mnist_dataset
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        baseline_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
     expanded.fit(X_train, y_train, epochs=5)
     print(expanded.trainable_weights[0].shape)
     # TODO
 
 
 def test_expand_dense_layer_output_zero_same_output(
-        baseline_model: Sequential) -> None:
+        mnist_model) -> None:
     """Tests that the output zero strategy does not change model output.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        baseline_model,
+        mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert np.isclose(baseline_model(batch), expanded(batch)).all()
+    assert np.isclose(mnist_model(batch), expanded(batch)).all()
 
 
 def test_expand_dense_layer_output_zero_same_output_trained_model(
-        baseline_model: Sequential,
+        mnist_model,
         mnist_dataset: Tuple[Tuple[np.ndarray, np.ndarray],
                              Tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the output zero strategy does not change model output, even
     when the model has been pretrained.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     :param mnist_dataset: The MNIST dataset.
     """
     (X_train, y_train), (X_test, y_test) = mnist_dataset
-    baseline_model.fit(X_train, y_train, epochs=5)
-    baseline_eval = baseline_model.evaluate(X_test, y_test)
+    mnist_model.fit(X_train, y_train, epochs=5)
+    baseline_eval = mnist_model.evaluate(X_test, y_test)
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        baseline_model,
+        mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
@@ -171,30 +269,30 @@ def test_expand_dense_layer_output_zero_no_weight_symmetry() -> None:
 
 
 def test_expand_dense_layer_all_random_different_output(
-        baseline_model: Sequential) -> None:
+        mnist_model) -> None:
     """Tests that the all random strategy changes model output.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        baseline_model,
+        mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_ALL_RANDOM)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert not np.isclose(baseline_model(batch), expanded(batch)).all()
+    assert not np.isclose(mnist_model(batch), expanded(batch)).all()
 
 
 def test_expand_dense_layer_not_dense_raises_error(
-        baseline_model: Sequential) -> None:
+        mnist_model) -> None:
     """Tests that expand_dense_layer raises an error when the layer is not
     Dense.
 
-    :param baseline_model: The baseline model.
+    :param mnist_model: The baseline model.
     """
     with pytest.raises(NotADenseLayerError):
-        _ = expand_dense_layer(baseline_model, 'flatten', 1)
+        _ = expand_dense_layer(mnist_model, 'flatten', 1)
 
 
 def test_expand_dense_layers_increases_layer_sizes() -> None:
