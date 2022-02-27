@@ -203,7 +203,7 @@ def test_are_symmetric_dense_neurons_raises_error(
 
 
 def test_expand_dense_layer_increases_layer_size(
-        mnist_model) -> None:
+        mnist_model: Sequential) -> None:
     """Tests that expand_dense_layer increases the size of the given layer.
 
     :param mnist_model: The baseline model.
@@ -215,7 +215,7 @@ def test_expand_dense_layer_increases_layer_size(
 
 
 def test_expand_dense_layer_all_zero_same_output(
-        mnist_model) -> None:
+        mnist_model: Sequential) -> None:
     """Tests that the all zero strategy does not change model output.
 
     :param mnist_model: The baseline model.
@@ -228,7 +228,7 @@ def test_expand_dense_layer_all_zero_same_output(
 
 
 def test_expand_dense_layer_all_zero_causes_weight_symmetry(
-        mnist_model,
+        mnist_model: Sequential,
         mnist_dataset: Tuple[Tuple[np.ndarray, np.ndarray],
                              Tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the all zero strategy causes weight symmetry when the model
@@ -238,16 +238,20 @@ def test_expand_dense_layer_all_zero_causes_weight_symmetry(
     :param mnist_dataset: The MNIST dataset.
     """
     (X_train, y_train), _ = mnist_dataset
+    num_old_neurons = mnist_model.get_layer('dense_1').units
     num_new_neurons = 5
     expanded = expand_dense_layer(
         mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
     expanded.fit(X_train, y_train, epochs=5)
-    print(expanded.trainable_weights[0].shape)
-    # TODO
+    assert are_symmetric_dense_neurons(
+        expanded,
+        'dense_1',
+        set(range(num_old_neurons, num_old_neurons + num_new_neurons))
+    )
 
 
 def test_expand_dense_layer_output_zero_same_output(
-        mnist_model) -> None:
+        mnist_model: Sequential) -> None:
     """Tests that the output zero strategy does not change model output.
 
     :param mnist_model: The baseline model.
@@ -263,7 +267,7 @@ def test_expand_dense_layer_output_zero_same_output(
 
 
 def test_expand_dense_layer_output_zero_same_output_trained_model(
-        mnist_model,
+        mnist_model: Sequential,
         mnist_dataset: Tuple[Tuple[np.ndarray, np.ndarray],
                              Tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the output zero strategy does not change model output, even
@@ -285,15 +289,36 @@ def test_expand_dense_layer_output_zero_same_output_trained_model(
     assert np.isclose(baseline_eval, expanded_eval).all()
 
 
-def test_expand_dense_layer_output_zero_no_weight_symmetry() -> None:
+def test_expand_dense_layer_output_zero_no_weight_symmetry(
+        mnist_model: Sequential,
+        mnist_dataset: Tuple[Tuple[np.ndarray, np.ndarray],
+                             Tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the output zero strategy does not cause weight symmetry when
-    the model is fine-tuned."""
-    # TODO
-    assert False
+    the model is fine-tuned.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    (X_train, y_train), _ = mnist_dataset
+    num_new_neurons = 5
+    # Pick two arbitrary new neurons to test for symmetry.
+    new_neuron_idx_1 = 1
+    new_neuron_idx_2 = 2
+    expanded = expand_dense_layer(
+        mnist_model,
+        'dense_1',
+        num_new_neurons,
+        strategy=STRATEGY_OUTPUT_ZERO)
+    expanded.fit(X_train, y_train, epochs=5)
+    assert not are_symmetric_dense_neurons(
+        expanded,
+        'dense_1',
+        {new_neuron_idx_1, new_neuron_idx_2}
+    )
 
 
 def test_expand_dense_layer_all_random_different_output(
-        mnist_model) -> None:
+        mnist_model: Sequential) -> None:
     """Tests that the all random strategy changes model output.
 
     :param mnist_model: The baseline model.
@@ -309,7 +334,7 @@ def test_expand_dense_layer_all_random_different_output(
 
 
 def test_expand_dense_layer_not_dense_raises_error(
-        mnist_model) -> None:
+        mnist_model: Sequential) -> None:
     """Tests that expand_dense_layer raises an error when the layer is not
     Dense.
 
