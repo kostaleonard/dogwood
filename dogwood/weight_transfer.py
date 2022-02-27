@@ -2,7 +2,11 @@
 # TODO add support for arbitrary architectures, not just Sequential
 
 from typing import Dict, Set
+from itertools import combinations
+import numpy as np
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from dogwood.errors import NotADenseLayerError
 
 STRATEGY_ALL_ZERO = 'all_zero'
 STRATEGY_OUTPUT_ZERO = 'output_zero'
@@ -30,8 +34,37 @@ def are_symmetric_dense_neurons(
     :return: True if all of the given neurons are symmetric with each other,
         False otherwise.
     """
-    # TODO raise error if not dense layer
-    return False
+    layer_names = [layer.name for layer in model.layers]
+    layer_idx = layer_names.index(layer_name)
+    layer_in = model.layers[layer_idx]
+    if not isinstance(layer_in, Dense):
+        raise NotADenseLayerError
+    layer_out = None if layer_idx == len(model.layers) - 1 else \
+        model.layers[layer_idx + 1]
+    if layer_out and not isinstance(layer_out, Dense):
+        raise NotADenseLayerError
+    weights_and_biases_in = layer_in.get_weights()
+    weights_in = weights_and_biases_in[0]
+    biases_in = weights_and_biases_in[1]
+    # Outgoing biases do not contribute to symmetry.
+    weights_out = [] if not layer_out else layer_out.get_weights()[0]
+    weights_in_neurons = [weights_in[:, idx] for idx in neuron_indices]
+    biases_in_neurons = [biases_in[idx] for idx in neuron_indices]
+    weights_out_neurons = [] if not layer_out else [
+        weights_out[idx, :] for idx in neuron_indices]
+    for weights_in_neurons_1, weights_in_neurons_2 in combinations(
+            weights_in_neurons, 2):
+        if not np.isclose(weights_in_neurons_1, weights_in_neurons_2).all():
+            return False
+    for biases_in_neurons_1, biases_in_neurons_2 in combinations(
+            biases_in_neurons, 2):
+        if not np.isclose(biases_in_neurons_1, biases_in_neurons_2):
+            return False
+    for weights_out_neurons_1, weights_in_neurons_2 in combinations(
+            weights_out_neurons, 2):
+        if not np.isclose(weights_out_neurons_1, weights_in_neurons_2).all():
+            return False
+    return True
 
 
 def expand_dense_layer(

@@ -60,9 +60,9 @@ def micro_symmetry_model() -> Sequential:
     model = Sequential([
         Dense(MICRO_HIDDEN_LEN, activation='relu', name='dense_1',
               input_shape=(MICRO_INPUT_LEN,)),
-        Dense(MICRO_OUTPUT_LEN, activation='relu', name='dense_2')
+        Dense(MICRO_OUTPUT_LEN, activation='softmax', name='dense_2')
     ])
-    model.compile()
+    model.compile(loss='sparse_categorical_crossentropy')
     return model
 
 
@@ -77,9 +77,7 @@ def micro_symmetry_dataset() -> Tuple[np.ndarray, np.ndarray]:
     X_train = np.arange(
         num_examples * MICRO_INPUT_LEN, dtype=np.float32).reshape(
         (num_examples, MICRO_INPUT_LEN))
-    y_train = 2 * np.arange(
-        num_examples * MICRO_OUTPUT_LEN, dtype=np.float32).reshape(
-        (num_examples, MICRO_OUTPUT_LEN))
+    y_train = np.arange(num_examples, dtype=np.float32) % MICRO_OUTPUT_LEN
     return X_train, y_train
 
 
@@ -148,8 +146,6 @@ def test_are_symmetric_dense_neurons_constant_initialized_trained(
     micro_symmetry_model.fit(X_train, y_train, epochs=5)
     assert are_symmetric_dense_neurons(
         micro_symmetry_model, 'dense_1', set(range(MICRO_HIDDEN_LEN)))
-    assert are_symmetric_dense_neurons(
-        micro_symmetry_model, 'dense_2', set(range(MICRO_OUTPUT_LEN)))
 
 
 def test_are_symmetric_dense_neurons_asymmetric(
