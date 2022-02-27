@@ -148,6 +148,34 @@ def test_are_symmetric_dense_neurons_constant_initialized_trained(
         micro_symmetry_model, 'dense_1', set(range(MICRO_HIDDEN_LEN)))
 
 
+def test_are_symmetric_dense_neurons_multi_output_is_asymmetric(
+        micro_symmetry_model: Sequential,
+        micro_symmetry_dataset: Tuple[np.ndarray, np.ndarray]) -> None:
+    """Tests that a multi-output model does not, in general, have symmetric
+    weights in the last layer, even if they were symmetric before training.
+    Note that, since the hidden layer nodes are symmetric (see
+    test_are_symmetric_dense_neurons_constant_initialized_trained()), the rows
+    in the weight matrix of the final layer will be identical. This is not
+    shown in this test because it was already covered in the aforementioned.
+    Also note that the single output case is already demonstrated to be
+    symmetric (by definition, since there is only one neuron) in
+    test_are_symmetric_dense_neurons_one_neuron().
+
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    :param micro_symmetry_dataset: The training dataset for the model.
+    """
+    weights = micro_symmetry_model.get_weights()
+    for idx, layer_weights in enumerate(weights):
+        weights[idx] = np.ones_like(layer_weights)
+    micro_symmetry_model.set_weights(weights)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_2', set(range(MICRO_OUTPUT_LEN)))
+    X_train, y_train = micro_symmetry_dataset
+    micro_symmetry_model.fit(X_train, y_train, epochs=5)
+    assert not are_symmetric_dense_neurons(
+        micro_symmetry_model, 'dense_2', set(range(MICRO_OUTPUT_LEN)))
+
+
 def test_are_symmetric_dense_neurons_asymmetric(
         micro_symmetry_model: Sequential) -> None:
     """Tests that a model whose weights were randomly initialized causes no

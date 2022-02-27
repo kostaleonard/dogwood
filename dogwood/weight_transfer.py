@@ -22,10 +22,10 @@ def are_symmetric_dense_neurons(
     We define "neuron symmetry" as two or more neurons computing the (exact)
     same function on every input. In other words, on any arbitrary signal, the
     neurons receive the same input and propagate the same output--all weights
-    from the previous layer must be the same, and all weights to the next layer
-    must be the same with respect to those specific neurons. Neuron symmetry
-    occurs when the weights of a neural network are initialized to a constant
-    value, not randomly.
+    and biases from the previous layer must be the same, and all weights to the
+    next layer must be the same with respect to those specific neurons. Neuron
+    symmetry occurs when the weights of a neural network are initialized to a
+    constant value, not randomly.
 
     :param model: The model whose weights to examine.
     :param layer_name: The name of the dense layer in which the neurons reside.
