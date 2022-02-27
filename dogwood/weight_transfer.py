@@ -1,11 +1,37 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
+# TODO add support for arbitrary architectures, not just Sequential
 
-from typing import Dict
+from typing import Dict, Set
 from tensorflow.keras.models import Sequential
 
 STRATEGY_ALL_ZERO = 'all_zero'
 STRATEGY_OUTPUT_ZERO = 'output_zero'
 STRATEGY_ALL_RANDOM = 'all_random'
+
+
+def are_symmetric_dense_neurons(
+        model: Sequential,
+        layer_name: str,
+        neuron_indices: Set[int]) -> bool:
+    """Returns True if all of the given neurons are symmetric with each other.
+
+    We define "neuron symmetry" as two or more neurons computing the (exact)
+    same function on every input. In other words, on any arbitrary signal, the
+    neurons receive the same input and propagate the same output--all weights
+    from the previous layer must be the same, and all weights to the next layer
+    must be the same with respect to those specific neurons. Neuron symmetry
+    occurs when the weights of a neural network are initialized to a constant
+    value, not randomly.
+
+    :param model: The model whose weights to examine.
+    :param layer_name: The name of the dense layer in which the neurons reside.
+    :param neuron_indices: The indices of the neurons in the dense layer. If
+        only one index is provided, the result will always be True.
+    :return: True if all of the given neurons are symmetric with each other,
+        False otherwise.
+    """
+    # TODO raise error if not dense layer
+    return False
 
 
 def expand_dense_layer(
@@ -46,7 +72,6 @@ def expand_dense_layer(
         may not be identical based on choice of strategy.
     """
     # TODO raise error if not dense layer
-    # TODO add support for arbitrary architectures
     return model
 
 
@@ -74,5 +99,4 @@ def expand_dense_layers(
         may not be identical based on choice of strategy.
     """
     # TODO define in terms of expand_dense_layer()
-    # TODO add support for arbitrary architectures
     return model
