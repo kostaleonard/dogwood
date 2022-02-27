@@ -1,11 +1,11 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
 # TODO add support for arbitrary architectures, not just Sequential
 
-from typing import Dict, Set
+from typing import Dict, Set, Tuple, Optional
 from itertools import combinations
 import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential, clone_model
+from tensorflow.keras.layers import Layer, Dense
 from dogwood.errors import NotADenseLayerError
 
 STRATEGY_ALL_ZERO = 'all_zero'
@@ -34,13 +34,10 @@ def are_symmetric_dense_neurons(
     :return: True if all of the given neurons are symmetric with each other,
         False otherwise.
     """
-    layer_names = [layer.name for layer in model.layers]
-    layer_idx = layer_names.index(layer_name)
-    layer_in = model.layers[layer_idx]
+    layer_in, layer_out = _get_layer_input_and_output_by_name(
+        model, layer_name)
     if not isinstance(layer_in, Dense):
         raise NotADenseLayerError
-    layer_out = None if layer_idx == len(model.layers) - 1 else \
-        model.layers[layer_idx + 1]
     if layer_out and not isinstance(layer_out, Dense):
         raise NotADenseLayerError
     weights_and_biases_in = layer_in.get_weights()
@@ -69,7 +66,7 @@ def are_symmetric_dense_neurons(
 
 def expand_dense_layer(
         model: Sequential,
-        dense_layer_name: str,
+        layer_name: str,
         num_new_neurons: int,
         strategy: str = STRATEGY_OUTPUT_ZERO) -> Sequential:
     """Returns a new model with additional neurons in the given dense layer.
@@ -82,7 +79,7 @@ def expand_dense_layer(
     :param model: The model whose base architecture and weights to use. No
         other elements of the architecture are changed; all weights are copied
         to the new model.
-    :param dense_layer_name: The name of the dense layer to expand.
+    :param layer_name: The name of the dense layer to expand.
     :param num_new_neurons: The number of neurons to add to the layer.
     :param strategy: The strategy with which to populate the new weights into
         and out of the additional neurons. Please see #15 for gradient
@@ -104,13 +101,21 @@ def expand_dense_layer(
         output model will use the weights of the input model, but performance
         may not be identical based on choice of strategy.
     """
-    # TODO raise error if not dense layer
-    return model
+    # TODO increase layer sizes. Can we do this without editing H5 files?
+    expanded = clone_model(model)
+    layer_in, layer_out = _get_layer_input_and_output_by_name(
+        expanded, layer_name)
+    if not isinstance(layer_in, Dense):
+        raise NotADenseLayerError
+    if layer_out and not isinstance(layer_out, Dense):
+        raise NotADenseLayerError
+    
+    return expanded
 
 
 def expand_dense_layers(
         model: Sequential,
-        dense_layer_names_and_neurons: Dict[str, int],
+        layer_names_and_neurons: Dict[str, int],
         strategy: str = STRATEGY_OUTPUT_ZERO) -> Sequential:
     """Returns a new model with additional neurons in the given dense layers.
 
@@ -121,7 +126,7 @@ def expand_dense_layers(
     :param model: The model whose base architecture and weights to use. No
         other elements of the architecture are changed; all weights are copied
         to the new model.
-    :param dense_layer_names_and_neurons: A dictionary whose keys are the names
+    :param layer_names_and_neurons: A dictionary whose keys are the names
         of the dense layers to expand and whose values are the number of
         neurons to add to each layer.
     :param strategy: The strategy with which to populate the new weights into
@@ -133,3 +138,19 @@ def expand_dense_layers(
     """
     # TODO define in terms of expand_dense_layer()
     return model
+
+
+def _get_layer_input_and_output_by_name(
+        model: Sequential, layer_name: str) -> Tuple[Layer, Optional[Layer]]:
+    """Returns the requested layer and the subsequent layer, if it exists.
+
+    :param model: The model in which to find the layer.
+    :param layer_name: The name of the layer to find.
+    :return: The requested layer and the subsequent layer, if it exists.
+    """
+    layer_names = [layer.name for layer in model.layers]
+    layer_idx = layer_names.index(layer_name)
+    layer_in = model.layers[layer_idx]
+    layer_out = None if layer_idx == len(model.layers) - 1 else \
+        model.layers[layer_idx + 1]
+    return layer_in, layer_out
