@@ -1,93 +1,151 @@
 """Tests weight_transfer.py."""
 
+from typing import Tuple
 import pytest
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten, Dense
 from dogwood.errors import NotADenseLayerError
 from dogwood.weight_transfer import expand_dense_layer, expand_dense_layers, \
     STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM
 
+MAX_PIXEL_VALUE = 255
 MNIST_IMAGE_SHAPE = (28, 28)
 
 
-def test_expand_dense_layer_increases_layer_size() -> None:
-    """Tests that expand_dense_layer increases the size of the given layer."""
-    model = Sequential([
+@pytest.fixture(scope='session')
+def mnist_dataset() -> Tuple[Tuple[np.ndarray, np.ndarray],
+                             Tuple[np.ndarray, np.ndarray]]:
+    """Returns the preprocessed MNIST dataset.
+
+    :return: The preprocessed MNIST dataset as (X_train, y_train), (X_test,
+        y_test).
+    """
+    (X_train, y_train), (X_test, y_test) = mnist.load_data()
+    X_train = tf.cast(X_train, tf.float32) / MAX_PIXEL_VALUE
+    X_test = tf.cast(X_test, tf.float32) / MAX_PIXEL_VALUE
+    return (X_train, y_train), (X_test, y_test)
+
+
+@pytest.fixture
+def baseline_model() -> Sequential:
+    """Returns the baseline model for use on MNIST.
+
+    :return: The baseline model for use on MNIST.
+    """
+    return Sequential([
         Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
         Dense(1, activation='relu', name='dense_1'),
         Dense(10, activation='softmax', name='dense_2')
     ])
+
+
+def test_expand_dense_layer_increases_layer_size(
+        baseline_model: Sequential) -> None:
+    """Tests that expand_dense_layer increases the size of the given layer.
+
+    :param baseline_model: The baseline model.
+    """
     num_new_neurons = 5
-    expanded = expand_dense_layer(model, 'dense_1', num_new_neurons)
+    expanded = expand_dense_layer(baseline_model, 'dense_1', num_new_neurons)
     assert expanded.get_layer('dense_1').units == \
-        model.get_layer('dense_1').units + num_new_neurons
+        baseline_model.get_layer('dense_1').units + num_new_neurons
 
 
-def test_expand_dense_layer_all_zero_same_output() -> None:
-    """Tests that the all zero strategy does not change model output."""
-    model = Sequential([
-        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
-        Dense(1, activation='relu', name='dense_1'),
-        Dense(10, activation='softmax', name='dense_2')
-    ])
+def test_expand_dense_layer_all_zero_same_output(
+        baseline_model: Sequential) -> None:
+    """Tests that the all zero strategy does not change model output.
+
+    :param baseline_model: The baseline model.
+    """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        baseline_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert np.isclose(model(batch), expanded(batch)).all()
+    assert np.isclose(baseline_model(batch), expanded(batch)).all()
 
 
-def test_expand_dense_layer_output_zero_same_output() -> None:
-    """Tests that the output zero strategy does not change model output."""
-    model = Sequential([
-        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
-        Dense(1, activation='relu', name='dense_1'),
-        Dense(10, activation='softmax', name='dense_2')
-    ])
-    num_new_neurons = 5
-    expanded = expand_dense_layer(
-        model, 'dense_1', num_new_neurons, strategy=STRATEGY_OUTPUT_ZERO)
-    batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert np.isclose(model(batch), expanded(batch)).all()
-
-
-def test_expand_dense_layer_output_zero_same_output_trained_model() -> None:
-    """Tests that the output zero strategy does not change model output, even
-    when the model has been pretrained."""
+def test_expand_dense_layer_all_zero_causes_weight_symmetry() -> None:
+    """Tests that the all zero strategy causes weight symmetry when the model
+    is fine-tuned."""
     # TODO
     assert False
 
 
-def test_expand_dense_layer_all_random_different_output() -> None:
-    """Tests that the all random strategy changes model output."""
-    model = Sequential([
-        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
-        Dense(1, activation='relu', name='dense_1'),
-        Dense(10, activation='softmax', name='dense_2')
-    ])
+def test_expand_dense_layer_output_zero_same_output(
+        baseline_model: Sequential) -> None:
+    """Tests that the output zero strategy does not change model output.
+
+    :param baseline_model: The baseline model.
+    """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_RANDOM)
+        baseline_model,
+        'dense_1',
+        num_new_neurons,
+        strategy=STRATEGY_OUTPUT_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert not np.isclose(model(batch), expanded(batch)).all()
+    assert np.isclose(baseline_model(batch), expanded(batch)).all()
 
 
-def test_expand_dense_layer_not_dense_raises_error() -> None:
+def test_expand_dense_layer_output_zero_same_output_trained_model(
+        baseline_model: Sequential,
+        mnist_dataset: Tuple[Tuple[np.ndarray, np.ndarray],
+                             Tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that the output zero strategy does not change model output, even
+    when the model has been pretrained.
+
+    :param baseline_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    baseline_model.compile(optimizer='adam',
+                           loss='sparse_categorical_crossentropy',
+                           metrics=['sparse_categorical_accuracy'])
+    # TODO
+    assert False
+
+
+def test_expand_dense_layer_output_zero_no_weight_symmetry() -> None:
+    """Tests that the output zero strategy does not cause weight symmetry when
+    the model is fine-tuned."""
+    # TODO
+    assert False
+
+
+def test_expand_dense_layer_all_random_different_output(
+        baseline_model: Sequential) -> None:
+    """Tests that the all random strategy changes model output.
+
+    :param baseline_model: The baseline model.
+    """
+    num_new_neurons = 5
+    expanded = expand_dense_layer(
+        baseline_model,
+        'dense_1',
+        num_new_neurons,
+        strategy=STRATEGY_ALL_RANDOM)
+    batch = np.ones((2, *MNIST_IMAGE_SHAPE))
+    assert not np.isclose(baseline_model(batch), expanded(batch)).all()
+
+
+def test_expand_dense_layer_not_dense_raises_error(
+        baseline_model: Sequential) -> None:
     """Tests that expand_dense_layer raises an error when the layer is not
-    Dense."""
-    model = Sequential([
-        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
-        Dense(1, activation='relu', name='dense_1'),
-        Dense(10, activation='softmax', name='dense_2')
-    ])
+    Dense.
+
+    :param baseline_model: The baseline model.
+    """
     with pytest.raises(NotADenseLayerError):
-        _ = expand_dense_layer(model, 'flatten', 1)
+        _ = expand_dense_layer(baseline_model, 'flatten', 1)
 
 
 def test_expand_dense_layers_increases_layer_sizes() -> None:
     """Tests that expand_dense_layers increases the sizes of the given
-    layers."""
+    layers.
+    """
+    # TODO make fixture?
     model = Sequential([
         Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
         Dense(1, activation='relu', name='dense_1'),
@@ -104,5 +162,19 @@ def test_expand_dense_layers_increases_layer_sizes() -> None:
 def test_expand_dense_layers_maximizes_number_of_random_weights() -> None:
     """Tests that expand_dense_layers randomly initializes the maximum number
     of weights when strategy is output zero."""
+    # TODO
+    assert False
+
+
+def test_expand_dense_layers_all_zero_causes_weight_symmetry() -> None:
+    """Tests that expand_dense_layers causes weight symmetry when using the all
+    zero strategy."""
+    # TODO
+    assert False
+
+
+def test_expand_dense_layers_output_zero_no_weight_symmetry() -> None:
+    """Tests that expand_dense_layers does not cause weight symmetry when using
+    the output zero strategy."""
     # TODO
     assert False
