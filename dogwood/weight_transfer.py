@@ -1,7 +1,7 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
 # TODO add support for arbitrary architectures, not just Sequential
 
-from typing import Dict, Set, Tuple, Optional
+from typing import Dict, Set, Tuple, Optional, Any
 from itertools import combinations
 import numpy as np
 from tensorflow.keras.models import Sequential, clone_model
@@ -109,7 +109,7 @@ def expand_dense_layer(
         raise NotADenseLayerError
     if layer_out and not isinstance(layer_out, Dense):
         raise NotADenseLayerError
-    
+
     return expanded
 
 
@@ -154,3 +154,23 @@ def _get_layer_input_and_output_by_name(
     layer_out = None if layer_idx == len(model.layers) - 1 else \
         model.layers[layer_idx + 1]
     return layer_in, layer_out
+
+
+def clone_layer(
+        layer: Layer,
+        replace: Optional[Dict[str, Any]] = None) -> Layer:
+    """Returns a new instance of the layer's class with the same configuration.
+
+    :param layer: The layer to clone.
+    :param replace: A dictionary of configurations to replace. The keys are
+        generally arguments to the layer class's __init__(), and the values
+        correspond to the configuration keys.
+    :return: A new instance of the layer's class with the same configuration.
+        The cloned layer does not have the same weights as the original.
+    """
+    # This implementation is based on tensorflow.keras.models in TFv2.8.
+    if replace:
+        config = {**layer.get_config(), **replace}
+    else:
+        config = layer.get_config()
+    return layer.__class__.from_config(config)

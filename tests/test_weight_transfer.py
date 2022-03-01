@@ -11,7 +11,7 @@ from tensorflow.keras.layers import Flatten, Dense
 from dogwood.errors import NotADenseLayerError
 from dogwood.weight_transfer import expand_dense_layer, expand_dense_layers, \
     STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM, \
-    are_symmetric_dense_neurons
+    are_symmetric_dense_neurons, clone_layer
 
 MAX_PIXEL_VALUE = 255
 MNIST_IMAGE_SHAPE = (28, 28)
@@ -381,3 +381,39 @@ def test_expand_dense_layers_output_zero_no_weight_symmetry() -> None:
     the output zero strategy."""
     # TODO
     assert False
+
+
+def test_clone_layer_uses_previous_config() -> None:
+    """Tests that clone_layer uses previous layer configuration."""
+    units = 10
+    activation = 'relu'
+    use_bias = False
+    layer = Dense(units, activation=activation, use_bias=use_bias)
+    cloned = clone_layer(layer)
+    assert cloned.units == units
+    assert cloned.activation.__name__ == activation
+    assert cloned.use_bias == use_bias
+
+
+def test_clone_layer_does_not_copy_weights() -> None:
+    """Tests that clone_layer does not copy weights."""
+    units = 5
+    input_shape = (2,)
+    layer = Dense(units, input_shape=input_shape)
+    _ = Sequential([layer])
+    cloned = clone_layer(layer)
+    _ = Sequential([cloned])
+    assert not np.array_equal(layer.get_weights(), cloned.get_weights())
+
+
+def test_clone_layer_replaces_config() -> None:
+    """Tests that clone_layer replaces configuration parameters when new values
+    are supplied."""
+    activation = 'relu'
+    use_bias = False
+    layer = Dense(5, activation=activation, use_bias=use_bias)
+    replace = {'units': 10}
+    cloned = clone_layer(layer, replace=replace)
+    assert cloned.units == replace['units']
+    assert cloned.activation.__name__ == activation
+    assert cloned.use_bias == use_bias
