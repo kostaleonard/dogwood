@@ -1,10 +1,13 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
 # TODO add support for arbitrary architectures, not just Sequential
 
+import os
 from typing import Dict, Set, Tuple, Optional, Any
 from itertools import combinations
+from tempfile import TemporaryDirectory
+import h5py
 import numpy as np
-from tensorflow.keras.models import Sequential, clone_model
+from tensorflow.keras.models import Sequential, save_model, load_model
 from tensorflow.keras.layers import Layer, Dense
 from dogwood.errors import NotADenseLayerError
 
@@ -102,14 +105,54 @@ def expand_dense_layer(
         may not be identical based on choice of strategy.
     """
     # TODO increase layer sizes. Can we do this without editing H5 files?
-    expanded = clone_model(model)
     layer_in, layer_out = _get_layer_input_and_output_by_name(
-        expanded, layer_name)
+        model, layer_name)
     if not isinstance(layer_in, Dense):
         raise NotADenseLayerError
     if layer_out and not isinstance(layer_out, Dense):
         raise NotADenseLayerError
-
+    # Create new model, without new weights.
+    expanded = Sequential()
+    for layer in model.layers:
+        if layer == layer_in:
+            replace = {'units': layer.units + num_new_neurons}
+            expanded.add(clone_layer(layer, replace=replace))
+        else:
+            expanded.add(clone_layer(layer))
+    # Load weights into expanded model.
+    with TemporaryDirectory() as temp_dir:
+        weights_save_file = os.path.join(temp_dir, 'model.h5')
+        model.save_weights(weights_save_file)
+        with h5py.File(weights_save_file, 'r+') as outfile:
+            # TODO add notebook code
+            # TODO use correct initialization strategy
+            # Layer in.
+            group = outfile[layer_in.name][layer_in.name]
+            biases = group['bias:0'][:]
+            dtype = biases.dtype
+            new_biases = np.concatenate(
+                (biases, np.zeros(num_new_neurons)), axis=0)
+            del group['bias:0']
+            group.create_dataset(
+                'bias:0', new_biases.shape, dtype=dtype, data=new_biases)
+            weights = group['kernel:0'][:]
+            dtype = weights.dtype
+            new_weights = np.concatenate(
+                (weights, np.zeros((len(weights), num_new_neurons))), axis=1)
+            del group['kernel:0']
+            group.create_dataset(
+                'kernel:0', new_weights.shape, dtype=dtype, data=new_weights)
+            # Layer out.
+            group = outfile[layer_out.name][layer_out.name]
+            weights = group['kernel:0'][:]
+            dtype = weights.dtype
+            new_weights = np.concatenate(
+                (weights, np.zeros((num_new_neurons, weights.shape[1]))),
+                axis=0)
+            del group['kernel:0']
+            group.create_dataset(
+                'kernel:0', new_weights.shape, dtype=dtype, data=new_weights)
+        expanded.load_weights(weights_save_file)
     return expanded
 
 
