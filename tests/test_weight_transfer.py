@@ -242,6 +242,9 @@ def test_expand_dense_layer_all_zero_causes_weight_symmetry(
     num_new_neurons = 5
     expanded = expand_dense_layer(
         mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+    expanded.compile(optimizer='adam',
+                     loss='sparse_categorical_crossentropy',
+                     metrics=['sparse_categorical_accuracy'])
     expanded.fit(X_train, y_train, epochs=5)
     assert are_symmetric_dense_neurons(
         expanded,
