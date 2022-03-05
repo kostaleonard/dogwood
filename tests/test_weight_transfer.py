@@ -19,9 +19,9 @@ MICRO_HIDDEN_LEN = 4
 MICRO_OUTPUT_LEN = 3
 
 
-@pytest.fixture(scope='session')
-def mnist_dataset() -> tuple[tuple[np.ndarray, np.ndarray],
-                             tuple[np.ndarray, np.ndarray]]:
+@pytest.fixture(scope='session', name='mnist_dataset')
+def fixture_mnist_dataset() -> tuple[tuple[np.ndarray, np.ndarray],
+                                     tuple[np.ndarray, np.ndarray]]:
     """Returns the preprocessed MNIST dataset.
 
     :return: The preprocessed MNIST dataset as (X_train, y_train), (X_test,
@@ -33,8 +33,8 @@ def mnist_dataset() -> tuple[tuple[np.ndarray, np.ndarray],
     return (X_train, y_train), (X_test, y_test)
 
 
-@pytest.fixture
-def mnist_model() -> Sequential:
+@pytest.fixture(name='mnist_model')
+def fixture_mnist_model() -> Sequential:
     """Returns the baseline model for use on MNIST.
 
     :return: The baseline model for use on MNIST.
@@ -50,8 +50,8 @@ def mnist_model() -> Sequential:
     return model
 
 
-@pytest.fixture
-def multilayer_mnist_model() -> Sequential:
+@pytest.fixture(name='multilayer_mnist_model')
+def fixture_multilayer_mnist_model() -> Sequential:
     """Returns a multilayer model for use on MNIST.
 
     :return: A multilayer model for use on MNIST.
@@ -68,8 +68,8 @@ def multilayer_mnist_model() -> Sequential:
     return model
 
 
-@pytest.fixture
-def micro_symmetry_model() -> Sequential:
+@pytest.fixture(name='micro_symmetry_model')
+def fixture_micro_symmetry_model() -> Sequential:
     """Returns the small model used in weight symmetry tests.
 
     :return: The small model used in weight symmetry tests.
@@ -83,8 +83,8 @@ def micro_symmetry_model() -> Sequential:
     return model
 
 
-@pytest.fixture
-def micro_symmetry_dataset() -> tuple[np.ndarray, np.ndarray]:
+@pytest.fixture(name='micro_symmetry_dataset')
+def fixture_micro_symmetry_dataset() -> tuple[np.ndarray, np.ndarray]:
     """Returns a training dataset for the micro symmetry model.
 
     :return: A training dataset for the micro symmetry model as X_train,

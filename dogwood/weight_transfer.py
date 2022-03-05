@@ -1,6 +1,5 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
 # pylint: disable=no-name-in-module
-# TODO add support for arbitrary architectures, not just Sequential
 
 from __future__ import annotations
 from typing import Any
