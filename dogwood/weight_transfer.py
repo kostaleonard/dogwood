@@ -188,8 +188,15 @@ def expand_dense_layers(
         output model will use the weights of the input model, but performance
         may not be identical based on choice of strategy.
     """
-    # TODO define in terms of expand_dense_layer()
-    return model
+    expanded = model
+    for layer in model.layers:
+        if layer.name in layer_names_and_neurons:
+            expanded = expand_dense_layer(
+                expanded,
+                layer.name,
+                layer_names_and_neurons[layer.name],
+                strategy=strategy)
+    return expanded
 
 
 def _get_layer_input_and_output_by_name(

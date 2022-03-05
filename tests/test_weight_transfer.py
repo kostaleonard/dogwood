@@ -51,6 +51,24 @@ def mnist_model() -> Sequential:
 
 
 @pytest.fixture
+def multilayer_mnist_model() -> Sequential:
+    """Returns a multilayer model for use on MNIST.
+
+    :return: A multilayer model for use on MNIST.
+    """
+    model = Sequential([
+        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
+        Dense(1, activation='relu', name='dense_1'),
+        Dense(2, activation='relu', name='dense_2'),
+        Dense(10, activation='softmax', name='dense_3')
+    ])
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['sparse_categorical_accuracy'])
+    return model
+
+
+@pytest.fixture
 def micro_symmetry_model() -> Sequential:
     """Returns the small model used in weight symmetry tests.
 
@@ -299,6 +317,9 @@ def test_expand_dense_layer_output_zero_same_output_trained_model(
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
+    expanded.compile(optimizer='adam',
+                     loss='sparse_categorical_crossentropy',
+                     metrics=['sparse_categorical_accuracy'])
     expanded_eval = expanded.evaluate(X_test, y_test)
     assert np.isclose(baseline_eval, expanded_eval).all()
 
@@ -323,6 +344,9 @@ def test_expand_dense_layer_output_zero_no_weight_symmetry(
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
+    expanded.compile(optimizer='adam',
+                     loss='sparse_categorical_crossentropy',
+                     metrics=['sparse_categorical_accuracy'])
     expanded.fit(X_train, y_train, epochs=5)
     assert not are_symmetric_dense_neurons(
         expanded,
@@ -369,43 +393,123 @@ def test_expand_dense_layer_invalid_strategy_raises_error(
         _ = expand_dense_layer(mnist_model, 'dense_1', 1, strategy='dne')
 
 
-def test_expand_dense_layers_increases_layer_sizes() -> None:
+def test_expand_dense_layers_increases_layer_sizes(
+        multilayer_mnist_model: Sequential) -> None:
     """Tests that expand_dense_layers increases the sizes of the given
     layers.
+
+    :param multilayer_mnist_model: The baseline model.
     """
-    # TODO make fixture?
-    model = Sequential([
-        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
-        Dense(1, activation='relu', name='dense_1'),
-        Dense(2, activation='relu', name='dense_2'),
-        Dense(10, activation='softmax', name='dense_3')
-    ])
     dense_layer_names_and_neurons = {'dense_1': 3, 'dense_2': 2}
-    expanded = expand_dense_layers(model, dense_layer_names_and_neurons)
+    expanded = expand_dense_layers(
+        multilayer_mnist_model, dense_layer_names_and_neurons)
     for name, num_new_neurons in dense_layer_names_and_neurons.items():
         assert expanded.get_layer(name).units == \
-           model.get_layer(name).units + num_new_neurons
+           multilayer_mnist_model.get_layer(name).units + num_new_neurons
 
 
-def test_expand_dense_layers_maximizes_number_of_random_weights() -> None:
+def test_expand_dense_layers_maximizes_number_of_random_weights(
+        multilayer_mnist_model: Sequential) -> None:
     """Tests that expand_dense_layers randomly initializes the maximum number
-    of weights when strategy is output zero."""
-    # TODO
-    assert False
+    of weights when strategy is output zero.
+
+    Because the new weights are initialized from the input layer to the output
+    layer, there should be non-zero weights from new neurons to new neurons.
+    Observe that these would be zero if set in the opposite direction, because
+    the output zero strategy forces connections from new neurons to existing
+    neurons to be zero.
+
+    :param multilayer_mnist_model: The baseline model.
+    """
+    dense_layer_names_and_neurons = {'dense_1': 3, 'dense_2': 2}
+    expanded = expand_dense_layers(
+        multilayer_mnist_model,
+        dense_layer_names_and_neurons,
+        strategy=STRATEGY_OUTPUT_ZERO)
+    original_in_layer = multilayer_mnist_model.get_layer('dense_1')
+    original_out_layer = multilayer_mnist_model.get_layer('dense_2')
+    expanded_out_layer = expanded.get_layer('dense_2')
+    weights_and_biases = expanded_out_layer.get_weights()
+    weights = weights_and_biases[0]
+    weights_from_new_neurons = weights[original_in_layer.units:, :]
+    weights_from_new_neurons_to_new_neurons = \
+        weights_from_new_neurons[:, original_out_layer.units:]
+    assert weights_from_new_neurons_to_new_neurons.shape == (
+        dense_layer_names_and_neurons['dense_1'],
+        dense_layer_names_and_neurons['dense_2']
+    )
+    assert (weights_from_new_neurons_to_new_neurons != 0).all()
 
 
-def test_expand_dense_layers_all_zero_causes_weight_symmetry() -> None:
+def test_expand_dense_layers_all_zero_causes_weight_symmetry(
+        multilayer_mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that expand_dense_layers causes weight symmetry when using the all
-    zero strategy."""
-    # TODO
-    assert False
+    zero strategy.
+
+    :param multilayer_mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    (X_train, y_train), _ = mnist_dataset
+    dense_layer_names_and_neurons = {'dense_1': 3, 'dense_2': 2}
+    expanded = expand_dense_layers(
+        multilayer_mnist_model,
+        dense_layer_names_and_neurons,
+        strategy=STRATEGY_ALL_ZERO)
+    expanded.compile(optimizer='adam',
+                     loss='sparse_categorical_crossentropy',
+                     metrics=['sparse_categorical_accuracy'])
+    expanded.fit(X_train, y_train, epochs=5)
+    num_old_neurons = multilayer_mnist_model.get_layer('dense_1').units
+    num_new_neurons = dense_layer_names_and_neurons['dense_1']
+    assert are_symmetric_dense_neurons(
+        expanded,
+        'dense_1',
+        set(range(num_old_neurons, num_old_neurons + num_new_neurons))
+    )
+    num_old_neurons = multilayer_mnist_model.get_layer('dense_2').units
+    num_new_neurons = dense_layer_names_and_neurons['dense_2']
+    assert are_symmetric_dense_neurons(
+        expanded,
+        'dense_2',
+        set(range(num_old_neurons, num_old_neurons + num_new_neurons))
+    )
 
 
-def test_expand_dense_layers_output_zero_no_weight_symmetry() -> None:
+def test_expand_dense_layers_output_zero_no_weight_symmetry(
+        multilayer_mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that expand_dense_layers does not cause weight symmetry when using
-    the output zero strategy."""
-    # TODO
-    assert False
+    the output zero strategy.
+
+    :param multilayer_mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    (X_train, y_train), _ = mnist_dataset
+    dense_layer_names_and_neurons = {'dense_1': 3, 'dense_2': 2}
+    expanded = expand_dense_layers(
+        multilayer_mnist_model,
+        dense_layer_names_and_neurons,
+        strategy=STRATEGY_OUTPUT_ZERO)
+    expanded.compile(optimizer='adam',
+                     loss='sparse_categorical_crossentropy',
+                     metrics=['sparse_categorical_accuracy'])
+    expanded.fit(X_train, y_train, epochs=5)
+    # Pick two arbitrary new neurons to test for symmetry.
+    new_neuron_idx_1 = 2
+    new_neuron_idx_2 = 3
+    assert not are_symmetric_dense_neurons(
+        expanded,
+        'dense_1',
+        {new_neuron_idx_1, new_neuron_idx_2}
+    )
+    assert not are_symmetric_dense_neurons(
+        expanded,
+        'dense_2',
+        {new_neuron_idx_1, new_neuron_idx_2}
+    )
 
 
 def test_clone_layer_uses_previous_config() -> None:
