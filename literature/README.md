@@ -91,6 +91,15 @@ Alzheimer's disease stages using 3D MRI scans.
 
     TODO
 
+7. [Hu, 2018. Exploring Weight Symmetry in Deep Neural Networks](https://arxiv.org/abs/1812.11027).
+
+    TODO Finds that, in some convolutional and recurrent architectures, weight
+    symmetry does not significantly reduce model performance as might be
+    supposed. At the same time, weight symmetry reduces model size by 25%. Do
+    these results extend to all architectures? Do we need to worry about weight
+    symmetry at all?
+    
+
 ## Key terms
 
 * Transfer learning: A machine learning technique that aims at improving the

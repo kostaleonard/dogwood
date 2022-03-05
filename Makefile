@@ -1,7 +1,7 @@
 all: help
 
 help:
-	@echo "To install required packages, run 'make install' from a clean 'python:3.6' (or higher) conda environment."
+	@echo "To install required packages, run 'make install' from a clean 'python:3.9' (or higher) conda environment."
 
 install:
 	pip install -r requirements.txt
@@ -11,6 +11,14 @@ lint:
 	pylint tests
 
 test:
+	pytest -m "not slowtest" --cov=dogwood tests
+	coverage xml
+
+test_slow:
+	pytest -m "slowtest" --cov=dogwood tests
+	coverage xml
+
+test_full:
 	pytest --cov=dogwood tests
 	coverage xml
 

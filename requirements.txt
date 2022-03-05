@@ -5,7 +5,8 @@ build
 twine
 mloperations
 notebook
-tensorflow
+tensorflow==2.7
 h5py
 matplotlib
 sklearn
+numpy
