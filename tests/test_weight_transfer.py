@@ -1,6 +1,5 @@
 """Tests weight_transfer.py."""
 # pylint: disable=no-name-in-module
-# TODO mark slowtests
 
 import pytest
 import numpy as np
@@ -112,6 +111,7 @@ def test_are_symmetric_dense_neurons_one_neuron(
                 micro_symmetry_model, layer_name, {neuron_idx})
 
 
+@pytest.mark.slowtest
 def test_are_symmetric_dense_neurons_symmetric(
         micro_symmetry_model: Sequential,
         micro_symmetry_dataset: tuple[np.ndarray, np.ndarray]) -> None:
@@ -236,6 +236,7 @@ def test_are_symmetric_dense_neurons_asymmetric_weights_out(
     )
 
 
+@pytest.mark.slowtest
 def test_are_symmetric_dense_neurons_constant_initialized_trained(
         micro_symmetry_model: Sequential,
         micro_symmetry_dataset: tuple[np.ndarray, np.ndarray]) -> None:
@@ -259,6 +260,7 @@ def test_are_symmetric_dense_neurons_constant_initialized_trained(
         micro_symmetry_model, 'dense_1', set(range(MICRO_HIDDEN_LEN)))
 
 
+@pytest.mark.slowtest
 def test_are_symmetric_dense_neurons_multi_output_is_asymmetric(
         micro_symmetry_model: Sequential,
         micro_symmetry_dataset: tuple[np.ndarray, np.ndarray]) -> None:
@@ -353,6 +355,7 @@ def test_expand_dense_layer_all_zero_same_output(
     assert np.isclose(mnist_model(batch), expanded(batch)).all()
 
 
+@pytest.mark.slowtest
 def test_expand_dense_layer_all_zero_causes_weight_symmetry(
         mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
@@ -395,6 +398,7 @@ def test_expand_dense_layer_output_zero_same_output(
     assert np.isclose(mnist_model(batch), expanded(batch)).all()
 
 
+@pytest.mark.slowtest
 def test_expand_dense_layer_output_zero_same_output_trained_model(
         mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
@@ -421,6 +425,7 @@ def test_expand_dense_layer_output_zero_same_output_trained_model(
     assert np.isclose(baseline_eval, expanded_eval).all()
 
 
+@pytest.mark.slowtest
 def test_expand_dense_layer_output_zero_no_weight_symmetry(
         mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
@@ -541,6 +546,7 @@ def test_expand_dense_layers_maximizes_number_of_random_weights(
     assert (weights_from_new_neurons_to_new_neurons != 0).all()
 
 
+@pytest.mark.slowtest
 def test_expand_dense_layers_all_zero_causes_weight_symmetry(
         multilayer_mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
@@ -577,6 +583,7 @@ def test_expand_dense_layers_all_zero_causes_weight_symmetry(
     )
 
 
+@pytest.mark.slowtest
 def test_expand_dense_layers_output_zero_no_weight_symmetry(
         multilayer_mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
