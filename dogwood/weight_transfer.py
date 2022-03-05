@@ -1,15 +1,14 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
 # TODO add support for arbitrary architectures, not just Sequential
 
-import os
-from typing import Dict, Set, Tuple, Optional, Any
+from __future__ import annotations
+from typing import Any
 from itertools import combinations
-from tempfile import TemporaryDirectory
-import h5py
 import numpy as np
-from tensorflow.keras.models import Sequential, save_model, load_model
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Layer, Dense
-from dogwood.errors import NotADenseLayerError
+from tensorflow.keras.initializers import GlorotUniform
+from dogwood.errors import NotADenseLayerError, InvalidExpansionStrategyError
 
 STRATEGY_ALL_ZERO = 'all_zero'
 STRATEGY_OUTPUT_ZERO = 'output_zero'
@@ -19,7 +18,7 @@ STRATEGY_ALL_RANDOM = 'all_random'
 def are_symmetric_dense_neurons(
         model: Sequential,
         layer_name: str,
-        neuron_indices: Set[int]) -> bool:
+        neuron_indices: set[int]) -> bool:
     """Returns True if all of the given neurons are symmetric with each other.
 
     We define "neuron symmetry" as two or more neurons computing the (exact)
@@ -79,6 +78,12 @@ def expand_dense_layer(
     weight symmetry problems, more of the network can be randomly initialized
     when using expand_dense_layers(), which does this update intelligently.
 
+    Here are a few notes regarding random initialization:
+        1. GlorotUniform initialization depends on the size of the input, so we
+            initialize with the full size of the new layer, then subset to the
+            new weights.
+        2. New bias units are set to 0, the default value for Dense layers.
+
     :param model: The model whose base architecture and weights to use. No
         other elements of the architecture are changed; all weights are copied
         to the new model.
@@ -104,6 +109,9 @@ def expand_dense_layer(
         output model will use the weights of the input model, but performance
         may not be identical based on choice of strategy.
     """
+    if strategy not in {
+            STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM}:
+        raise InvalidExpansionStrategyError
     layer_in, layer_out = _get_layer_input_and_output_by_name(
         model, layer_name)
     if not isinstance(layer_in, Dense):
@@ -113,13 +121,21 @@ def expand_dense_layer(
     # Create new model, add new weights.
     # Layer weights can only be set after the layer has been added to a model.
     expanded = Sequential()
+    glorot = GlorotUniform()
     for layer in model.layers:
         if layer == layer_in:
             weights_and_biases = layer.get_weights()
             weights = weights_and_biases[0]
             biases = weights_and_biases[1]
-            new_weights = np.concatenate(
-                (weights, np.zeros((len(weights), num_new_neurons))), axis=1)
+            if strategy == STRATEGY_ALL_ZERO:
+                new_weights = np.concatenate(
+                    (weights, np.zeros((len(weights), num_new_neurons))),
+                    axis=1)
+            else:
+                new_weights_shape = (
+                    len(weights), weights.shape[1] + num_new_neurons)
+                initialization = glorot(new_weights_shape)[:, :num_new_neurons]
+                new_weights = np.concatenate((weights, initialization), axis=1)
             new_biases = np.concatenate(
                 (biases, np.zeros(num_new_neurons)), axis=0)
             replace = {'units': layer.units + num_new_neurons}
@@ -130,9 +146,15 @@ def expand_dense_layer(
             weights_and_biases = layer.get_weights()
             weights = weights_and_biases[0]
             biases = weights_and_biases[1]
-            new_weights = np.concatenate(
-                (weights, np.zeros((num_new_neurons, weights.shape[1]))),
-                axis=0)
+            if strategy == STRATEGY_ALL_RANDOM:
+                new_weights_shape = (
+                    len(weights) + num_new_neurons, weights.shape[1])
+                initialization = glorot(new_weights_shape)[:num_new_neurons, :]
+                new_weights = np.concatenate((weights, initialization), axis=0)
+            else:
+                new_weights = np.concatenate(
+                    (weights, np.zeros((num_new_neurons, weights.shape[1]))),
+                    axis=0)
             new_layer = clone_layer(layer)
             expanded.add(new_layer)
             new_layer.set_weights([new_weights, biases])
@@ -145,7 +167,7 @@ def expand_dense_layer(
 
 def expand_dense_layers(
         model: Sequential,
-        layer_names_and_neurons: Dict[str, int],
+        layer_names_and_neurons: dict[str, int],
         strategy: str = STRATEGY_OUTPUT_ZERO) -> Sequential:
     """Returns a new model with additional neurons in the given dense layers.
 
@@ -171,7 +193,7 @@ def expand_dense_layers(
 
 
 def _get_layer_input_and_output_by_name(
-        model: Sequential, layer_name: str) -> Tuple[Layer, Optional[Layer]]:
+        model: Sequential, layer_name: str) -> tuple[Layer, Layer | None]:
     """Returns the requested layer and the subsequent layer, if it exists.
 
     :param model: The model in which to find the layer.
@@ -188,7 +210,7 @@ def _get_layer_input_and_output_by_name(
 
 def clone_layer(
         layer: Layer,
-        replace: Optional[Dict[str, Any]] = None) -> Layer:
+        replace: dict[str, Any] | None = None) -> Layer:
     """Returns a new instance of the layer's class with the same configuration.
 
     :param layer: The layer to clone.
