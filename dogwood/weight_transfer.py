@@ -1,4 +1,5 @@
 """Contains functions to transfer knowledge from pretrained model weights."""
+# pylint: disable=no-name-in-module
 # TODO add support for arbitrary architectures, not just Sequential
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ def are_symmetric_dense_neurons(
     :return: True if all of the given neurons are symmetric with each other,
         False otherwise.
     """
+    # pylint: disable=too-many-locals
     layer_in, layer_out = _get_layer_input_and_output_by_name(
         model, layer_name)
     if not isinstance(layer_in, Dense):
@@ -46,7 +48,7 @@ def are_symmetric_dense_neurons(
     weights_in = weights_and_biases_in[0]
     biases_in = weights_and_biases_in[1]
     # Outgoing biases do not contribute to symmetry.
-    weights_out = [] if not layer_out else layer_out.get_weights()[0]
+    weights_out = np.array([]) if not layer_out else layer_out.get_weights()[0]
     weights_in_neurons = [weights_in[:, idx] for idx in neuron_indices]
     biases_in_neurons = [biases_in[idx] for idx in neuron_indices]
     weights_out_neurons = [] if not layer_out else [
@@ -109,6 +111,7 @@ def expand_dense_layer(
         output model will use the weights of the input model, but performance
         may not be identical based on choice of strategy.
     """
+    # pylint: disable=too-many-locals
     if strategy not in {
             STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM}:
         raise InvalidExpansionStrategyError

@@ -1,4 +1,5 @@
 """Tests weight_transfer.py."""
+# pylint: disable=no-name-in-module
 # TODO mark slowtests
 
 import pytest
@@ -142,12 +143,105 @@ def test_are_symmetric_dense_neurons_symmetric(
     )
 
 
+def test_are_symmetric_dense_neurons_asymmetric_weights_in(
+        micro_symmetry_model: Sequential) -> None:
+    """Tests that a model whose weights into a neuron are different is
+    asymmetric.
+
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    """
+    # Deliberately set the weights of neurons 3 and 4 in dense_1.
+    weights = micro_symmetry_model.get_weights()
+    # Weights in.
+    weights[0][:, 2:4] = np.ones((2, 2))
+    # Biases in.
+    weights[1][2:4] = np.ones((2,))
+    # Weights out.
+    weights[2][2:4, :] = np.ones((2, 3))
+    micro_symmetry_model.set_weights(weights)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+    # Cause asymmetry in weights in.
+    weights[0][:, 2:4] = np.array([[1, 2], [1, 2]])
+    micro_symmetry_model.set_weights(weights)
+    assert not are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+
+
+def test_are_symmetric_dense_neurons_asymmetric_biases_in(
+        micro_symmetry_model: Sequential) -> None:
+    """Tests that a model whose biases into a neuron are different is
+    asymmetric.
+
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    """
+    # Deliberately set the weights of neurons 3 and 4 in dense_1.
+    weights = micro_symmetry_model.get_weights()
+    # Weights in.
+    weights[0][:, 2:4] = np.ones((2, 2))
+    # Biases in.
+    weights[1][2:4] = np.ones((2,))
+    # Weights out.
+    weights[2][2:4, :] = np.ones((2, 3))
+    micro_symmetry_model.set_weights(weights)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+    # Cause asymmetry in biases in.
+    weights[1][2:4] = np.array([1, 2])
+    micro_symmetry_model.set_weights(weights)
+    assert not are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+
+
+def test_are_symmetric_dense_neurons_asymmetric_weights_out(
+        micro_symmetry_model: Sequential) -> None:
+    """Tests that a model whose weights out of a neuron are different is
+    asymmetric.
+
+    :param micro_symmetry_model: The small model used in weight symmetry tests.
+    """
+    # Deliberately set the weights of neurons 3 and 4 in dense_1.
+    weights = micro_symmetry_model.get_weights()
+    # Weights in.
+    weights[0][:, 2:4] = np.ones((2, 2))
+    # Biases in.
+    weights[1][2:4] = np.ones((2,))
+    # Weights out.
+    weights[2][2:4, :] = np.ones((2, 3))
+    micro_symmetry_model.set_weights(weights)
+    assert are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+    # Cause asymmetry in weights out.
+    weights[2][2:4, :] = np.array([[1, 1, 1], [2, 2, 2]])
+    micro_symmetry_model.set_weights(weights)
+    assert not are_symmetric_dense_neurons(
+        micro_symmetry_model,
+        'dense_1',
+        {2, 3}
+    )
+
+
 def test_are_symmetric_dense_neurons_constant_initialized_trained(
         micro_symmetry_model: Sequential,
         micro_symmetry_dataset: tuple[np.ndarray, np.ndarray]) -> None:
     """Tests that a model whose weights were initialized to a constant has
     weight symmetry even after training.
-    
+
     :param micro_symmetry_model: The small model used in weight symmetry tests.
     :param micro_symmetry_dataset: The training dataset for the model.
     """
@@ -193,11 +287,11 @@ def test_are_symmetric_dense_neurons_multi_output_is_asymmetric(
         micro_symmetry_model, 'dense_2', set(range(MICRO_OUTPUT_LEN)))
 
 
-def test_are_symmetric_dense_neurons_asymmetric(
+def test_are_symmetric_dense_neurons_random_initialization(
         micro_symmetry_model: Sequential) -> None:
     """Tests that a model whose weights were randomly initialized causes no
     weights symmetry.
-    
+
     :param micro_symmetry_model: The small model used in weight symmetry tests.
     """
     # Pick two arbitrary neuron indices.
@@ -217,6 +311,9 @@ def test_are_symmetric_dense_neurons_raises_error(
     """
     with pytest.raises(NotADenseLayerError):
         _ = are_symmetric_dense_neurons(mnist_model, 'flatten', {0})
+    mnist_model.add(Flatten(name='flatten_out'))
+    with pytest.raises(NotADenseLayerError):
+        _ = are_symmetric_dense_neurons(mnist_model, 'dense_2', {0})
 
 
 def test_expand_dense_layer_increases_layer_size(
@@ -380,6 +477,9 @@ def test_expand_dense_layer_not_dense_raises_error(
     """
     with pytest.raises(NotADenseLayerError):
         _ = expand_dense_layer(mnist_model, 'flatten', 1)
+    mnist_model.add(Flatten(name='flatten_out'))
+    with pytest.raises(NotADenseLayerError):
+        _ = expand_dense_layer(mnist_model, 'dense_2', 1)
 
 
 def test_expand_dense_layer_invalid_strategy_raises_error(
