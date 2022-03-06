@@ -49,7 +49,7 @@ This directory contains the literature review and associated files.
     avoiding negative transfer; interpretability of transfer learning
     techniques.
 
-2. [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E).
+1. [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E).
 
     Defines deep transfer learning and organizes it into 4 categories:
     instance-based, mapping-based, network-based, and adversarial-based. We are
@@ -57,56 +57,56 @@ This directory contains the literature review and associated files.
     approaches. Notes that the first layers of a neural network function as
     feature extractors, and the extracted features are versatile.
 
-3. [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf).
+1. [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf).
 
     TODO this is one of the foundational papers.
 
-4. [Wang, 2018. Deep visual domain adaptation: A survey](https://arxiv.org/pdf/1802.03601.pdf?ref=https://githubhelp.com)
+1. [Wang, 2018. Deep visual domain adaptation: A survey](https://arxiv.org/pdf/1802.03601.pdf?ref=https://githubhelp.com)
 
     TODO although this is focused on vision systems, the deep learning aspect
     could be very informative.
 
 ## Topic papers
 
+1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
+
+    TODO
+
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
 
     TODO
 
-2. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
+1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
     TODO
 
-3. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
+1. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
 
     TODO Explores "adaptation layers" and a "discrepancy loss" for training
     autoencoders for domain transfer.
 
-4. Masqood, 2019. Transfer learning assisted classification and detection of
+1. Masqood, 2019. Transfer learning assisted classification and detection of
 Alzheimer's disease stages using 3D MRI scans.
 
     TODO Recent example of deep transfer learning techniques in a biomedical
     setting. The biomedical aspect is not what is interesting; this is a recent
     example of how deep transfer learning is actually used in SOTA applications.
 
-5. Wang, 2019. Characterizing and avoiding negative transfer.
+1. Wang, 2019. Characterizing and avoiding negative transfer.
 
     TODO
 
-6. Lipton, 2018. The mythos of model interpretability.
+1. Lipton, 2018. The mythos of model interpretability.
 
     TODO
 
-7. [Hu, 2018. Exploring Weight Symmetry in Deep Neural Networks](https://arxiv.org/abs/1812.11027).
+1. [Hu, 2018. Exploring Weight Symmetry in Deep Neural Networks](https://arxiv.org/abs/1812.11027).
 
     TODO Finds that, in some convolutional and recurrent architectures, weight
     symmetry does not significantly reduce model performance as might be
     supposed. At the same time, weight symmetry reduces model size by 25%. Do
     these results extend to all architectures? Do we need to worry about weight
     symmetry at all?
-
-8. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
-
-    TODO
 
 ## Books
 
