@@ -6,6 +6,7 @@ This directory contains the literature review and associated files.
 
 * [Survey papers](#survey-papers)
 * [Topic papers](#topic-papers)
+* [Books](#books)
 * [Key terms](#key-terms)
 * [Questions](#questions)
 * [Thoughts](#thoughts)
@@ -50,7 +51,11 @@ This directory contains the literature review and associated files.
 
 2. [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E).
 
-    TODO
+    Defines deep transfer learning and organizes it into 4 categories:
+    instance-based, mapping-based, network-based, and adversarial-based. We are
+    most interested in network-based (i.e., parameter-based or model-based)
+    approaches. Notes that the first layers of a neural network function as
+    feature extractors, and the extracted features are versatile.
 
 3. [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf).
 
@@ -98,7 +103,16 @@ Alzheimer's disease stages using 3D MRI scans.
     supposed. At the same time, weight symmetry reduces model size by 25%. Do
     these results extend to all architectures? Do we need to worry about weight
     symmetry at all?
-    
+
+8. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
+
+    TODO
+
+## Books
+
+1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
+
+    TODO
 
 ## Key terms
 
@@ -206,6 +220,22 @@ target learner performance. [Zhuang, 2020. A Comprehensive Survey on Transfer Le
     logical relationship or rules learned in the source domain to the target
     domain.
 
+* Categories of deep transfer learning [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E):
+
+    * Instance-based deep transfer learning: Based on instance weighting
+    strategies; analogous to classical instance-based transfer learning.
+    
+    * Mapping-based deep transfer learning: Maps features into a new feature
+    space with better similarity between source and target domain; analogous to
+    classical feature-based transfer learning.
+    
+    * Network-based deep transfer learning: Reuses some or all of the pretrained
+    source domain network; analogous to classical parameter-based transfer
+    learning.
+    
+    * Adversarial-based: Uses adversarial technology to find transferable
+    features between domains.
+
 * Partial transfer learning: Approaches designed for the scenario in which the
 target domain classes are a subset of the source domain classes. TODO this
 description could be wrong based on the description in the paper. See #17. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com).
@@ -236,13 +266,13 @@ sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arx
 
 ## Questions
 
-* If transfer learning is defined as "improving the performance of target
-learners on target domains by transferring the knowledge contained in different
-but related source **domains**," does that include improving the performance of
-target learners on target domains by transferring the knowledge contained in
-different but related source **learners**? In our work, we aim to do both, i.e.,
-improve the performance of target learners on target domains by transferring the
-knowledge contained in different but related source **learners and/or domains**.
+* The definitions of transfer learning presented in [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
+and [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E)
+state that transfer learning occurs when the source domain is not equal to the
+target domain, or the source task is not equal to the target task. But what
+about when both the domain and task are identical for source and target, but we
+want to try a new model architecture on a fraction of the data or without
+training from scratch? These definitions do not account for such a goal.
 
 ## Thoughts
 
