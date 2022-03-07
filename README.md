@@ -104,6 +104,42 @@ Accuracy after fine-tuning: 0.95
 Accuracy when pretrained on new models: 0.95
 ```
 
+### Intended workflow for model prototyping
+
+With the above functionality to load the best weights from pretrained models and add our own models to the pool, we can
+design a model prototyping workflow that significantly reduces the cost in time and compute of training new model
+architectures.
+
+```python
+# Create the model pool and dataset.
+pool = dogwood.PretrainingPool(dirname='/path/to/my/pretraining/dir')
+(X_train, y_train), (X_test, y_test) = get_my_dataset()
+
+# Prototype the first model.
+# Weights are set based on default open source pretrained models.
+prototype_model_1 = Model(
+    # Arbitrary architecture here.
+)
+prototype_model_1 = pool.get_pretrained_model(
+    prototype_model_1, X_train, y_train)
+prototype_model_1.fit(X_train, y_train, epochs=10)
+pool.add_model(prototype_model_1, X_train, y_train)
+
+# Prototype the second model.
+# Weights are set from default models and all previously trained models.
+# Training is much faster, because we are building on past knowledge.
+prototype_model_2 = Model(
+    # Arbitrary architecture here.
+)
+prototype_model_2 = pool.get_pretrained_model(
+    prototype_model_2, X_train, y_train)
+prototype_model_2.fit(X_train, y_train, epochs=10)
+pool.add_model(prototype_model_2, X_train, y_train)
+
+# Prototype the third model.
+# ...
+```
+
 ### Limitations
 
 `dogwood.get_pretrained_model(model, X_train, y_train)` can only make `model` as performant as its architecture allows.
