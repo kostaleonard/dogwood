@@ -27,3 +27,85 @@ the previous best performing model of similar, but not necessarily identical, ar
 ## Literature review
 
 For a complete list of references used, please see the [project literature review](literature/README.md).
+
+## Usage
+
+**Note: This project is still in development, so not all of the functionality shown below may be implemented yet.**
+
+### Setting the weights for an arbitrary model on an arbitrary task
+
+We would like to set the weights of a new model of arbitrary architecture to maximize its accuracy on an arbitrary
+dataset. We use `dogwood.get_pretrained_model(model, X_train, y_train)` to find the best weights for the given
+architecture and learning task based on a store of trained models, including popular ones like VGG, BERT, and StyleGAN.
+
+```python
+import numpy as np
+from tensorflow.keras.models import Model
+import dogwood
+
+
+def get_my_dataset() -> tuple[tuple[np.ndarray, np.ndarray],
+                              tuple[np.ndarray, np.ndarray]]:
+    # Your code here to return arbitrary (X_train, y_train), (X_test, y_test).
+    pass
+
+
+def get_my_model() -> Model:
+    # Your code here to return a model with arbitrary architecture.
+    pass
+
+
+(X_train, y_train), (X_test, y_test) = get_my_dataset()
+model = get_my_model()
+print(f'Accuracy on arbitrary task/model before pretraining: '
+      f'{model.evaluate(X_test, y_test)}') # Accuracy: 0.5
+model = dogwood.get_pretrained_model(model, X_train, y_train)
+print(f'Accuracy on arbitrary task/model after pretraining: '
+      f'{model.evaluate(X_test, y_test)}') # Accuracy: 0.9
+```
+
+Output:
+
+```
+Accuracy on arbitrary task/model before pretraining: 0.5
+Accuracy on arbitrary task/model after pretraining: 0.9
+```
+
+### Adding a trained model to the pretraining pool
+
+By default, `dogwood` transfers weights from popular open source models, but we can also add models to the pool to make
+learning on similar models/tasks even faster. Notice that this time we call
+`pool.get_pretrained_model(model, X_train, y_train)` instead of `dogwood.get_pretrained_model(model, X_train, y_train)`.
+The behavior of both is identical, but explicitly declaring the `PretrainingPool` object allows us to set its directory
+to wherever we would like to keep our trained models.
+
+```python
+pool = dogwood.PretrainingPool(dirname='/path/to/my/pretraining/dir')
+(X_train, y_train), (X_test, y_test) = get_my_dataset()
+model = get_my_model()
+model = pool.get_pretrained_model(model, X_train, y_train)
+print(f'Accuracy when pretrained on default models: '
+      f'{model.evaluate(X_test, y_test)}') # Accuracy: 0.9
+model.fit(X_train, y_train, epochs=10)
+print(f'Accuracy after fine-tuning: '
+      f'{model.evaluate(X_test, y_test)}') # Accuracy: 0.95
+pool.add_model(model, X_train, y_train)
+model = get_my_model()
+model = pool.get_pretrained_model(model, X_train, y_train)
+print(f'Accuracy when pretrained on new models: '
+      f'{model.evaluate(X_test, y_test)}') # Accuracy: 0.95
+```
+
+Output:
+
+```
+Accuracy when pretrained on default models: 0.9
+Accuracy after fine-tuning: 0.95
+Accuracy when pretrained on new models: 0.95
+```
+
+### Limitations
+
+`dogwood.get_pretrained_model(model, X_train, y_train)` can only make `model` as performant as its architecture allows.
+If `model` has an architecture that is inherently unsuited to its task, `dogwood` cannot make it achieve exceptional
+results.

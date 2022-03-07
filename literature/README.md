@@ -70,7 +70,13 @@ This directory contains the literature review and associated files.
 
 1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
 
-    TODO
+    Quantifies layer generality/specificity--i.e., how well features in a given
+    layer transfer between tasks. Measures how performance benefits of
+    transferring features decreases the more dissimilar source and target tasks
+    are. Finds that using transferred features boosts generalization even after
+    extensive fine-tuning; this is important because it means that, presumably
+    with enough neurons, a layer never really "forgets" what it learned during
+    training on other datasets.
 
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
 
@@ -263,6 +269,19 @@ traditional ML, matrix factorization is a popular strategy. [Zhuang, 2020. A Com
 model to a target model in which the target model uses similar, but not
 necessarily identical weights as the source model; a variant on parameter
 sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com)
+
+* Transfer learning training strategies [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf):
+
+    * Fine-tuning: When training on the new task, weight updates are allowed to
+    backpropagate through the entire network, including layers whose weights
+    were transferred from a pretrained model. If the target dataset is small,
+    this process may result in overfitting; if the target dataset is
+    sufficiently large, there is an expected performance gain over weight
+    freezing.
+    
+    * Weight freezing: When training on the new task, the layers whose weights
+    were transferred from a pretrained model are not updated. Using frozen
+    features preserved generality.
 
 ## Questions
 
