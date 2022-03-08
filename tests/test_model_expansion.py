@@ -8,7 +8,7 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten, Dense
 from dogwood.errors import NotADenseLayerError, InvalidExpansionStrategyError
-from dogwood.weight_transfer import expand_dense_layer, expand_dense_layers, \
+from dogwood.model_expansion import expand_dense_layer, expand_dense_layers, \
     STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM, \
     are_symmetric_dense_neurons, clone_layer
 
