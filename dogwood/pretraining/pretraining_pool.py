@@ -94,4 +94,4 @@ class PretrainingPool:
         :param y_train: The model's trainined labels.
         :return: A new instance of the given model with pretrained weights.
         """
-        # TODO
+        # TODO copy the first N layers and expand as necessary, maximizing performance on the training dataset? What about different architectures?

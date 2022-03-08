@@ -76,7 +76,11 @@ This directory contains the literature review and associated files.
     are. Finds that using transferred features boosts generalization even after
     extensive fine-tuning; this is important because it means that, presumably
     with enough neurons, a layer never really "forgets" what it learned during
-    training on other datasets.
+    training on other datasets. Defines fragile co-adaptation, the result of
+    which is that freezing layers tends to work best near the top or bottom, and
+    not the middle, of the network. One limitation is that the measure of
+    transferability requires you to train at least one neural network for each
+    layer, plus a baseline model with no transferred features.
 
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
 
@@ -282,6 +286,16 @@ sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arx
     * Weight freezing: When training on the new task, the layers whose weights
     were transferred from a pretrained model are not updated. Using frozen
     features preserved generality.
+
+* Fragile co-adaptation: The phenomenon that features in successive layers of a
+neural network interact with each other in a complex or fragile way such that
+this co-adaptation cannot be relearned by the upper layers alone when lower
+layers are frozen and transferred. Fragile co-adaptation tends to occur in the
+middle of a network: in the lower layers, features are general and little
+co-adaptation occurs; in the upper layers, there is less to learn if the network
+is frozen from that point, so gradient descent can find a good solution. But in
+the middle layers, freezing and transferring can cause significant performance
+degradation. Fine-tuning appears to counteract fragile co-adaptation. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
 
 ## Questions
 
