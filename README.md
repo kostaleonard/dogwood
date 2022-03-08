@@ -30,7 +30,7 @@ For a complete list of references used, please see the [project literature revie
 
 ## Usage
 
-**Note: This project is still in development, so not all of the functionality shown below may be implemented yet.**
+**Note: This project is still in development, so not all of the functionality shown below may yet be implemented.**
 
 ### Setting the weights for an arbitrary model on an arbitrary task
 
@@ -127,7 +127,7 @@ pool.add_model(prototype_model_1, X_train, y_train)
 
 # Prototype the second model.
 # Weights are set from default models and all previously trained models.
-# Training is much faster, because we are building on past knowledge.
+# Training to high accuracy is much faster.
 prototype_model_2 = Model(
     # Arbitrary architecture here.
 )
