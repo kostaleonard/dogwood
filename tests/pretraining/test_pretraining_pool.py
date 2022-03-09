@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import pytest
 import numpy as np
 from tensorflow.keras.models import Sequential
 from dogwood.pretraining.pretraining_pool import PretrainingPool
@@ -43,9 +44,13 @@ def test_add_model_writes_files(
         mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
                              tuple[np.ndarray, np.ndarray]]) -> None:
-    """Tests that add_model writes model and dataset files."""
-    (X_train, y_train), _ = mnist_dataset
+    """Tests that add_model writes model and dataset files.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
     _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     pool.add_model(mnist_model, X_train, y_train)
     assert os.path.exists(os.path.join(
@@ -54,3 +59,28 @@ def test_add_model_writes_files(
         TEST_DIRNAME, mnist_model.name, 'X_train.npy'))
     assert os.path.exists(os.path.join(
         TEST_DIRNAME, mnist_model.name, 'y_train.npy'))
+
+
+@pytest.mark.slowtest
+def test_get_pretrained_model_improves_performance(
+        mnist_model: Sequential,
+        large_mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that get_pretrained_model improves the performance of a new
+    model.
+
+    :param mnist_model: The baseline model.
+    :param large_mnist_model: The large model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), (X_test, y_test) = mnist_dataset
+    mnist_model.fit(X_train, y_train, batch_size=32, epochs=10)
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train)
+    acc_before_transfer = large_mnist_model.evaluate(X_test, y_test)[1]
+    large_mnist_model = pool.get_pretrained_model(
+        large_mnist_model, X_train, y_train)
+    acc_after_transfer = large_mnist_model.evaluate(X_test, y_test)[1]
+    assert acc_after_transfer > acc_before_transfer

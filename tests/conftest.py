@@ -28,17 +28,17 @@ def fixture_mnist_dataset() -> tuple[tuple[np.ndarray, np.ndarray],
     return (X_train, y_train), (X_test, y_test)
 
 
-@pytest.fixture(name='mnist_model')
-def fixture_mnist_model() -> Sequential:
-    """Returns the baseline model for use on MNIST.
+@pytest.fixture(name='micro_mnist_model')
+def fixture_micro_mnist_model() -> Sequential:
+    """Returns the micro model for use on MNIST.
 
-    :return: The baseline model for use on MNIST.
+    :return: The micro model for use on MNIST.
     """
     model = Sequential([
         Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
         Dense(1, activation='relu', name='dense_1'),
         Dense(10, activation='softmax', name='dense_2')
-    ], name='mnist_model')
+    ], name='micro_mnist_model')
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])
@@ -56,7 +56,41 @@ def fixture_multilayer_mnist_model() -> Sequential:
         Dense(1, activation='relu', name='dense_1'),
         Dense(2, activation='relu', name='dense_2'),
         Dense(10, activation='softmax', name='dense_3')
-    ])
+    ], name='multilayer_mnist_model')
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['sparse_categorical_accuracy'])
+    return model
+
+
+@pytest.fixture(name='mnist_model')
+def fixture_mnist_model() -> Sequential:
+    """Returns the baseline model for use on MNIST.
+
+    :return: The baseline model for use on MNIST.
+    """
+    model = Sequential([
+        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
+        Dense(128, activation='relu', name='dense_1'),
+        Dense(10, activation='softmax', name='dense_2')
+    ], name='mnist_model')
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['sparse_categorical_accuracy'])
+    return model
+
+
+@pytest.fixture(name='large_mnist_model')
+def fixture_large_mnist_model() -> Sequential:
+    """Returns the large model for use on MNIST.
+
+    :return: The large model for use on MNIST.
+    """
+    model = Sequential([
+        Flatten(input_shape=MNIST_IMAGE_SHAPE, name='flatten'),
+        Dense(256, activation='relu', name='dense_1'),
+        Dense(10, activation='softmax', name='dense_2')
+    ], name='large_mnist_model')
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])

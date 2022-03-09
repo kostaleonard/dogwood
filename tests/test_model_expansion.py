@@ -220,72 +220,72 @@ def test_are_symmetric_dense_neurons_random_initialization(
 
 
 def test_are_symmetric_dense_neurons_raises_error(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that are_symmetric_dense_neurons raises a NotADenseLayerError when
     supplied with a non-dense layer.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     with pytest.raises(NotADenseLayerError):
-        _ = are_symmetric_dense_neurons(mnist_model, 'flatten', {0})
-    mnist_model.add(Flatten(name='flatten_out'))
+        _ = are_symmetric_dense_neurons(micro_mnist_model, 'flatten', {0})
+    micro_mnist_model.add(Flatten(name='flatten_out'))
     with pytest.raises(NotADenseLayerError):
-        _ = are_symmetric_dense_neurons(mnist_model, 'dense_2', {0})
+        _ = are_symmetric_dense_neurons(micro_mnist_model, 'dense_2', {0})
 
 
 def test_expand_dense_layer_increases_layer_size(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that expand_dense_layer increases the size of the given layer.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
-    expanded = expand_dense_layer(mnist_model, 'dense_1', num_new_neurons)
+    expanded = expand_dense_layer(micro_mnist_model, 'dense_1', num_new_neurons)
     assert expanded.get_layer('dense_1').units == \
-           mnist_model.get_layer('dense_1').units + num_new_neurons
+           micro_mnist_model.get_layer('dense_1').units + num_new_neurons
 
 
 def test_expand_dense_layer_on_output_layer(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that expand_dense_layer can increase the size of the output layer.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
-    expanded = expand_dense_layer(mnist_model, 'dense_2', num_new_neurons)
+    expanded = expand_dense_layer(micro_mnist_model, 'dense_2', num_new_neurons)
     assert expanded.get_layer('dense_2').units == \
-           mnist_model.get_layer('dense_2').units + num_new_neurons
+           micro_mnist_model.get_layer('dense_2').units + num_new_neurons
 
 
 def test_expand_dense_layer_all_zero_same_output(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that the all zero strategy does not change model output.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        micro_mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert np.isclose(mnist_model(batch), expanded(batch)).all()
+    assert np.isclose(micro_mnist_model(batch), expanded(batch)).all()
 
 
 @pytest.mark.slowtest
 def test_expand_dense_layer_all_zero_causes_weight_symmetry(
-        mnist_model: Sequential,
+        micro_mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
                              tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the all zero strategy causes weight symmetry when the model
     is fine-tuned.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     :param mnist_dataset: The MNIST dataset.
     """
     (X_train, y_train), _ = mnist_dataset
-    num_old_neurons = mnist_model.get_layer('dense_1').units
+    num_old_neurons = micro_mnist_model.get_layer('dense_1').units
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        micro_mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
     expanded.compile(optimizer='adam',
                      loss='sparse_categorical_crossentropy',
                      metrics=['sparse_categorical_accuracy'])
@@ -298,38 +298,38 @@ def test_expand_dense_layer_all_zero_causes_weight_symmetry(
 
 
 def test_expand_dense_layer_output_zero_same_output(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that the output zero strategy does not change model output.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        mnist_model,
+        micro_mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert np.isclose(mnist_model(batch), expanded(batch)).all()
+    assert np.isclose(micro_mnist_model(batch), expanded(batch)).all()
 
 
 @pytest.mark.slowtest
 def test_expand_dense_layer_output_zero_same_output_trained_model(
-        mnist_model: Sequential,
+        micro_mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
                              tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the output zero strategy does not change model output, even
     when the model has been pretrained.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     :param mnist_dataset: The MNIST dataset.
     """
     (X_train, y_train), (X_test, y_test) = mnist_dataset
-    mnist_model.fit(X_train, y_train, epochs=5)
-    baseline_eval = mnist_model.evaluate(X_test, y_test)
+    micro_mnist_model.fit(X_train, y_train, epochs=5)
+    baseline_eval = micro_mnist_model.evaluate(X_test, y_test)
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        mnist_model,
+        micro_mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
@@ -342,13 +342,13 @@ def test_expand_dense_layer_output_zero_same_output_trained_model(
 
 @pytest.mark.slowtest
 def test_expand_dense_layer_output_zero_no_weight_symmetry(
-        mnist_model: Sequential,
+        micro_mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
                              tuple[np.ndarray, np.ndarray]]) -> None:
     """Tests that the output zero strategy does not cause weight symmetry when
     the model is fine-tuned.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     :param mnist_dataset: The MNIST dataset.
     """
     (X_train, y_train), _ = mnist_dataset
@@ -357,7 +357,7 @@ def test_expand_dense_layer_output_zero_no_weight_symmetry(
     new_neuron_idx_1 = 1
     new_neuron_idx_2 = 2
     expanded = expand_dense_layer(
-        mnist_model,
+        micro_mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_OUTPUT_ZERO)
@@ -373,44 +373,44 @@ def test_expand_dense_layer_output_zero_no_weight_symmetry(
 
 
 def test_expand_dense_layer_all_random_different_output(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that the all random strategy changes model output.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        mnist_model,
+        micro_mnist_model,
         'dense_1',
         num_new_neurons,
         strategy=STRATEGY_ALL_RANDOM)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
-    assert not np.isclose(mnist_model(batch), expanded(batch)).all()
+    assert not np.isclose(micro_mnist_model(batch), expanded(batch)).all()
 
 
 def test_expand_dense_layer_not_dense_raises_error(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that expand_dense_layer raises an error when the layer is not
     Dense.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     with pytest.raises(NotADenseLayerError):
-        _ = expand_dense_layer(mnist_model, 'flatten', 1)
-    mnist_model.add(Flatten(name='flatten_out'))
+        _ = expand_dense_layer(micro_mnist_model, 'flatten', 1)
+    micro_mnist_model.add(Flatten(name='flatten_out'))
     with pytest.raises(NotADenseLayerError):
-        _ = expand_dense_layer(mnist_model, 'dense_2', 1)
+        _ = expand_dense_layer(micro_mnist_model, 'dense_2', 1)
 
 
 def test_expand_dense_layer_invalid_strategy_raises_error(
-        mnist_model: Sequential) -> None:
+        micro_mnist_model: Sequential) -> None:
     """Tests that expand_dense_layer raises an error when the strategy is
     invalid.
 
-    :param mnist_model: The baseline model.
+    :param micro_mnist_model: The baseline model.
     """
     with pytest.raises(InvalidExpansionStrategyError):
-        _ = expand_dense_layer(mnist_model, 'dense_1', 1, strategy='dne')
+        _ = expand_dense_layer(micro_mnist_model, 'dense_1', 1, strategy='dne')
 
 
 def test_expand_dense_layers_increases_layer_sizes(

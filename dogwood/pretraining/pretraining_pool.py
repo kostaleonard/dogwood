@@ -76,6 +76,7 @@ class PretrainingPool:
         :param model: The versioned model.
         :param dataset: The versioned dataset.
         """
+        # TODO test this
         # TODO we potentially want a special representation.
         # TODO if no X_train/y_train, make user specify attr names.
         # self.add_model(model.model, dataset.X_train, dataset.y_train)
