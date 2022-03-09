@@ -8,7 +8,7 @@ from tensorflow.keras.models import Model
 from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
 
-DEFAULT_DIRNAME = os.path.join(Path.home(), '.dogwood', 'models')
+DEFAULT_DIRNAME = os.path.join(Path.home(), '.dogwood', 'pretrained')
 OPEN_SOURCE_MODELS = {'VGG16'}
 DEFAULT_MODELS = 'default'
 
