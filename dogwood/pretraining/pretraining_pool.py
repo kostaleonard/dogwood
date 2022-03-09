@@ -7,6 +7,7 @@ import numpy as np
 from tensorflow.keras.models import Model
 from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
+from dogwood.errors import PretrainingPoolAlreadyContainsModelError
 
 DEFAULT_DIRNAME = os.path.join(Path.home(), '.dogwood', 'pretrained')
 OPEN_SOURCE_MODELS = {'VGG16'}
@@ -54,7 +55,9 @@ class PretrainingPool:
                 set[str]: A set of strings indicating open source models.
                 None: No models.
         """
-        # TODO
+        self.dirname = dirname
+        Path(dirname).mkdir(parents=True, exist_ok=True)
+        # TODO get models/datasets
 
     def add_model(self,
                   model: Model,
@@ -66,7 +69,17 @@ class PretrainingPool:
         :param X_train: The model's training features.
         :param y_train: The model's training labels.
         """
-        # TODO
+        model_dir = os.path.join(self.dirname, model.name)
+        try:
+            os.mkdir(model_dir)
+        except FileExistsError as exc:
+            raise PretrainingPoolAlreadyContainsModelError from exc
+        model_path = os.path.join(model_dir, f'{model.name}.h5')
+        X_train_path = os.path.join(model_dir, 'X_train.npy')
+        y_train_path = os.path.join(model_dir, 'y_train.npy')
+        model.save(model_path)
+        np.save(X_train_path, X_train)
+        np.save(y_train_path, y_train)
 
     def add_versioned_model(self,
                             model: VersionedModel,
@@ -95,4 +108,5 @@ class PretrainingPool:
         :param y_train: The model's trainined labels.
         :return: A new instance of the given model with pretrained weights.
         """
+        return model
         # TODO copy the first N layers and expand as necessary, maximizing performance on the training dataset? What about different architectures?

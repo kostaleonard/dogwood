@@ -6,6 +6,7 @@ import pytest
 import numpy as np
 from tensorflow.keras.models import Sequential
 from dogwood.pretraining.pretraining_pool import PretrainingPool
+from dogwood.errors import PretrainingPoolAlreadyContainsModelError
 
 TEST_DIRNAME = '/tmp/test_pretraining_pool/pretrained'
 
@@ -59,6 +60,52 @@ def test_add_model_writes_files(
         TEST_DIRNAME, mnist_model.name, 'X_train.npy'))
     assert os.path.exists(os.path.join(
         TEST_DIRNAME, mnist_model.name, 'y_train.npy'))
+
+
+def test_add_model_twice_raises_error(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that calling add_model twice on the same model raises an error.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train)
+    with pytest.raises(PretrainingPoolAlreadyContainsModelError):
+        pool.add_model(mnist_model, X_train, y_train)
+
+
+@pytest.mark.slowtest
+def test_get_pretrained_model_changes_weights(
+        mnist_model: Sequential,
+        large_mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that get_pretrained_model changes model weights.
+
+    :param mnist_model: The baseline model.
+    :param large_mnist_model: The large model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    mnist_model.fit(X_train, y_train, batch_size=32, epochs=10)
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train)
+    weights_before = large_mnist_model.get_weights()
+    large_mnist_model = pool.get_pretrained_model(
+        large_mnist_model, X_train, y_train)
+    weights_after = large_mnist_model.get_weights()
+    all_equal = True
+    for idx, layer_weights_before in enumerate(weights_before):
+        layer_weights_after = weights_after[idx]
+        if not np.isclose(layer_weights_before, layer_weights_after).all():
+            all_equal = False
+    assert not all_equal
 
 
 @pytest.mark.slowtest
