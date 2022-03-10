@@ -39,7 +39,8 @@ This directory contains the literature review and associated files.
 
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
 
-    TODO
+    Trains a graph hypernetwork to predict the parameters of a wide range of
+    architectures on ImageNet and CIFAR-10.
 
 1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
