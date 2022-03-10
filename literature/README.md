@@ -15,47 +15,11 @@ This directory contains the literature review and associated files.
 
 1. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com). 
 
-    Defines transfer learning in terms of reducing the data required to succeed
-    in a new domain, although we also want to focus on transferring the
-    knowledge to a different architecture (the domain may or may not change).
-    When we say that our research aims to make transfer learning the default
-    posture for any training regime, perhaps what we are really saying is that
-    we want to reduce the time (and hence data) required to succeed in the new
-    domain and/or new architecture to the minimum. So this definition is
-    consistent with our objectives. Semi-supervised learning is an alternative,
-    but requires that you can collect large amounts of unlabeled data in
-    addition to some labeled data. It is possible to achieve better results by
-    transferring knowledge from/to more than one domain. It seems that we are
-    most interested in parameter-based transfer learning. Many of the methods
-    discussed add regularizers for training the target model from scratch,
-    rather than devising methods to shorten training time by starting with some
-    pretrained weights. We may be able to use parameter restriction techniques
-    (as opposed to parameter sharing) in the deep transfer setting. Due to
-    differences in source/target distributions, directly combining data or
-    models may not be successful, which is why some researchers use data-based
-    approaches to transfer learning or model ensembling. Deep learning
-    approaches to transfer learning include stacked autoencoders (SDA, mSLDA,
-    TLDA) and adversarial deep learning (GAN--although not sure this really
-    counts, DANN). Deep learning approaches often add a distribution adaptation
-    loss term/regularizer to minimize the "distance" between the intermediate
-    (i.e., latent) representations of the source and target distributions.
-    
-    Contains good general insights, but focused on transfer learning in the
-    traditional ML setting, not really deep transfer learning. Notes that
-    adversarial learning is very powerful in deep transfer learning based on
-    experimental results.
-    
-    Suggested future work: measuring the transferability across domains and
-    avoiding negative transfer; interpretability of transfer learning
-    techniques.
+    Defines transfer learning and associated key terms.
 
 1. [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E).
 
-    Defines deep transfer learning and organizes it into 4 categories:
-    instance-based, mapping-based, network-based, and adversarial-based. We are
-    most interested in network-based (i.e., parameter-based or model-based)
-    approaches. Notes that the first layers of a neural network function as
-    feature extractors, and the extracted features are versatile.
+    Defines and categorizes deep transfer learning.
 
 1. [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf).
 
@@ -71,16 +35,7 @@ This directory contains the literature review and associated files.
 1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
 
     Quantifies layer generality/specificity--i.e., how well features in a given
-    layer transfer between tasks. Measures how performance benefits of
-    transferring features decreases the more dissimilar source and target tasks
-    are. Finds that using transferred features boosts generalization even after
-    extensive fine-tuning; this is important because it means that, presumably
-    with enough neurons, a layer never really "forgets" what it learned during
-    training on other datasets. Defines fragile co-adaptation, the result of
-    which is that freezing layers tends to work best near the top or bottom, and
-    not the middle, of the network. One limitation is that the measure of
-    transferability requires you to train at least one neural network for each
-    layer, plus a baseline model with no transferred features.
+    layer transfer between tasks.
 
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
 
