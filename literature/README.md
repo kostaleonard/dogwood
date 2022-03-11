@@ -42,6 +42,11 @@ This directory contains the literature review and associated files.
     Trains a graph hypernetwork to predict the parameters of a wide range of
     architectures on ImageNet and CIFAR-10.
 
+1. [Brock, 2017. FreezeOut: Accelerate training by progressively freezing layers](https://arxiv.org/pdf/1706.04983.pdf?source=post_page---------------------------).
+
+    Decreases the learning rate for and, ultimately, freezes layers according to
+    a schedule, speeding up training marginally (20%) while preserving accuracy.
+
 1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
     TODO
@@ -50,13 +55,6 @@ This directory contains the literature review and associated files.
 
     TODO Explores "adaptation layers" and a "discrepancy loss" for training
     autoencoders for domain transfer.
-
-1. Masqood, 2019. Transfer learning assisted classification and detection of
-Alzheimer's disease stages using 3D MRI scans.
-
-    TODO Recent example of deep transfer learning techniques in a biomedical
-    setting. The biomedical aspect is not what is interesting; this is a recent
-    example of how deep transfer learning is actually used in SOTA applications.
 
 1. Wang, 2019. Characterizing and avoiding negative transfer.
 
