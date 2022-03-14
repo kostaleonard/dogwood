@@ -29,7 +29,6 @@ def test_init_creates_directory() -> None:
 
 def test_init_gets_models_and_datasets() -> None:
     """Tests that __init__ populates the pretraining directory."""
-    # TODO likely a slowtest
     _clear_test_directory()
     model_name = 'VGG16'
     _ = PretrainingPool(TEST_DIRNAME, with_models=model_name)
