@@ -52,6 +52,11 @@ This directory contains the literature review and associated files.
     Introduces a meta-learning regime that trains a model to generalize to new
     tasks in a few-shot setting.
 
+1. [Fey, 2021. GNNAutoScale: Scalable and Expressive Graph Neural Networksvia Historical Embeddings](https://cs.stanford.edu/~jure/pubs/gnnautoscale-icml21.pdf)
+
+    Uses historical embeddings to enable the training of GNNs on very large
+    graphs.
+
 1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
     TODO
