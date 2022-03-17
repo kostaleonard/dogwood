@@ -6,13 +6,17 @@ from pathlib import Path
 import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.applications.vgg16 import VGG16
+from mlops.model.versioned_model_builder import VersionedModelBuilder
+from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder
 from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError
+from dogwood import DOGWOOD_DIR
 
-DEFAULT_DIRNAME = os.path.join(Path.home(), '.dogwood', 'pretrained')
-OPEN_SOURCE_MODELS = {'VGG16'}
+PRETRAINED_DIRNAME = os.path.join(DOGWOOD_DIR, 'pretrained')
+MODEL_VGG16 = 'VGG16'
+OPEN_SOURCE_MODELS = {MODEL_VGG16}
 DEFAULT_MODELS = 'default'
 
 
@@ -27,20 +31,24 @@ class PretrainingPool:
 
     Pool structure:
     dirname/
-        model_name_1/
-            model_name_1.h5
-            X_train.npy
-            y_train.npy
-        model_name_2/
-            model_name_2.h5
-            X_train.npy
-            y_train.npy
-        ...
+        models/
+            model_name_1/version/
+                model_name_1.h5 (the saved model)
+                meta.json (metadata)
+            ...
+        datasets/
+            dataset_name_1/version/
+                X_train.npy (and other feature tensors by their given names)
+                y_train.npy (and other label tensors by their given names)
+                data_processor.pkl (DataProcessor object)
+                meta.json (metadata)
+                raw.tar.bz2 (bz2-zipped directory with the raw dataset files)
+            ...
     """
 
     def __init__(
             self,
-            dirname: str = DEFAULT_DIRNAME,
+            dirname: str = PRETRAINED_DIRNAME,
             with_models: str | set[str] | None = DEFAULT_MODELS) -> None:
         """Instantiates the object.
 
@@ -58,7 +66,8 @@ class PretrainingPool:
                 None: No models.
         """
         self.dirname = dirname
-        Path(dirname).mkdir(parents=True, exist_ok=True)
+        self.models_dirname = os.path.join(dirname, 'models')
+        self.datasets_dirname = os.path.join(dirname, 'datasets')
         if isinstance(with_models, set):
             self.with_models = with_models
         elif isinstance(with_models, str):
@@ -79,8 +88,13 @@ class PretrainingPool:
         the pool. If the files already exist for a model, then no action is
         taken; if the files do not exist, they are downloaded.
         """
+        Path(self.models_dirname).mkdir(parents=True, exist_ok=True)
+        Path(self.datasets_dirname).mkdir(parents=True, exist_ok=True)
         for model_name in self.with_models:
-            model_dirname = os.path.join(self.dirname, model_name)
+            if model_name == MODEL_VGG16:
+                self._populate_vgg16()
+
+            model_dirname = os.path.join(self.models_dirname, model_name)
             if not os.path.exists(model_dirname):
                 os.mkdir(model_dirname)
             model_path = os.path.join(model_dirname, f'{model_name}.h5')
@@ -90,6 +104,10 @@ class PretrainingPool:
                 pass
             # TODO download dataset to tempdir
             # TODO publish versioned dataset from files in tempdir
+
+    def _populate_vgg16(self) -> None:
+        """Instantiates the VGG16 model and a mini-imagenet dataset."""
+        dataset_builder = VersionedDatasetBuilder()
 
     def add_model(self,
                   model: Model,

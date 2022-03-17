@@ -2,11 +2,17 @@
 
 Leo's PhD repository.
 
-## Installation
+## Installation and setup
 
 ```bash
 pip install dogwood
 ```
+
+### API tokens
+
+Some functionality requires the use of API keys that should be set up according to site instructions.
+
+* [Kaggle](https://www.kaggle.com/docs/api): Used to download datasets for model pretraining.
 
 ## Motivation
 
