@@ -6,7 +6,8 @@ import pytest
 import numpy as np
 from tensorflow.keras.models import Sequential
 from dogwood.pretraining.pretraining_pool import PretrainingPool
-from dogwood.errors import PretrainingPoolAlreadyContainsModelError
+from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
+    NoSuchOpenSourceModelError
 
 TEST_DIRNAME = '/tmp/test_pretraining_pool/pretrained'
 
@@ -38,6 +39,14 @@ def test_init_gets_models_and_datasets() -> None:
         TEST_DIRNAME, model_name, 'X_train.npy'))
     assert os.path.exists(os.path.join(
         TEST_DIRNAME, model_name, 'y_train.npy'))
+
+
+def test_init_unknown_model_raises_error() -> None:
+    """Tests that __init__ raises an error when called with an unknown open
+    source model."""
+    _clear_test_directory()
+    with pytest.raises(NoSuchOpenSourceModelError):
+        _ = PretrainingPool(TEST_DIRNAME, with_models='dne')
 
 
 def test_add_model_writes_files(

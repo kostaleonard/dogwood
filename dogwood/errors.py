@@ -14,3 +14,8 @@ class InvalidExpansionStrategyError(ValueError):
 class PretrainingPoolAlreadyContainsModelError(FileExistsError):
     """Raised when a user adds two models with the same name to the pretraining
     pool."""
+
+
+class NoSuchOpenSourceModelError(ValueError):
+    """Raised when a user attempts to instantiate a pretraining pool with an
+    unknown or unsupported open source model."""
