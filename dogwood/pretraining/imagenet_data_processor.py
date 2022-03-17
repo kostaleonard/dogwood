@@ -9,13 +9,16 @@ The Kaggle page links to a pytorch ImageNet preprocessing script that uses the
 same format, so this implementation will be applicable in many cases.
 """
 
+import os
 import json
 import numpy as np
 from tensorflow.keras.utils import get_file
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from mlops.dataset.invertible_data_processor import InvertibleDataProcessor
 
 IMAGE_SCALE_HEIGHT = 256
 IMAGE_SCALE_WIDTH = 256
+IMAGE_TARGET_SIZE = (IMAGE_SCALE_HEIGHT, IMAGE_SCALE_WIDTH)
 CLASS_INDEX_PATH = ('https://storage.googleapis.com/download.tensorflow.org/'
                     'data/imagenet_class_index.json')
 CLASS_INDEX_HASH = 'c2c37ea517e94d9795004a39431a14cb'
@@ -66,7 +69,28 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         :return: A 2-tuple of the features dictionary and labels dictionary,
             with matching keys and ordered tensors.
         """
-        # TODO
+        features = {}
+        labels = {}
+        for subset in {'train', 'val'}:
+            features_key = f'X_{subset}'
+            labels_key = f'y_{subset}'
+            features[features_key] = []
+            labels[labels_key] = []
+            subset_path = os.path.join(dataset_path, subset)
+            class_dirnames = os.listdir(subset_path)
+            for class_name in class_dirnames:
+                class_images_path = os.path.join(subset_path, class_name)
+                image_names = os.listdir(class_images_path)
+                for image_name in image_names:
+                    image_path = os.path.join(class_images_path, image_name)
+                    image = load_img(image_path, target_size=IMAGE_TARGET_SIZE)
+                    tensor = img_to_array(image, dtype=np.uint8)
+                    features[features_key].append(tensor)
+                    labels[labels_key].append(class_name)
+            features[features_key] = np.array(features[features_key],
+                                              dtype=np.uint8)
+            labels[labels_key] = np.array(labels[labels_key])
+        return features, labels
 
     def get_raw_features(self, dataset_path: str) -> dict[str, np.ndarray]:
         """Returns the raw feature tensors from the prediction dataset path.
