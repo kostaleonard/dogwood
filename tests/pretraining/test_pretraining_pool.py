@@ -5,7 +5,8 @@ import shutil
 import pytest
 import numpy as np
 from tensorflow.keras.models import Sequential
-from dogwood.pretraining.pretraining_pool import PretrainingPool
+from dogwood.pretraining.pretraining_pool import PretrainingPool, \
+    MODEL_VGG16, VGG16_VERSION, DATASET_MINI_IMAGENET, MINI_IMAGENET_VERSION
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError
 
@@ -28,17 +29,25 @@ def test_init_creates_directory() -> None:
     assert os.path.exists(TEST_DIRNAME) and os.path.isdir(TEST_DIRNAME)
 
 
+@pytest.mark.slowtest
 def test_init_gets_models_and_datasets() -> None:
     """Tests that __init__ populates the pretraining directory."""
     _clear_test_directory()
-    model_name = 'VGG16'
-    _ = PretrainingPool(TEST_DIRNAME, with_models=model_name)
+    _ = PretrainingPool(TEST_DIRNAME, with_models=MODEL_VGG16)
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, model_name, f'{model_name}.h5'))
+        TEST_DIRNAME,
+        'datasets',
+        DATASET_MINI_IMAGENET,
+        MINI_IMAGENET_VERSION,
+        'X_train.npy'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, model_name, 'X_train.npy'))
+        TEST_DIRNAME,
+        'datasets',
+        DATASET_MINI_IMAGENET,
+        MINI_IMAGENET_VERSION,
+        'y_train.npy'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, model_name, 'y_train.npy'))
+        TEST_DIRNAME, 'models', MODEL_VGG16, VGG16_VERSION, 'model.h5'))
 
 
 def test_init_unknown_model_raises_error() -> None:
@@ -62,6 +71,7 @@ def test_add_model_writes_files(
     (X_train, y_train), _ = mnist_dataset
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     pool.add_model(mnist_model, X_train, y_train)
+    # TODO need to change format
     assert os.path.exists(os.path.join(
         TEST_DIRNAME, mnist_model.name, f'{mnist_model.name}.h5'))
     assert os.path.exists(os.path.join(

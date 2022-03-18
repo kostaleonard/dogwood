@@ -3,6 +3,7 @@
 import kaggle
 
 MINI_IMAGENET_DATASET = 'ifigotin/imagenetmini-1000'
+MINI_IMAGENET_DIRNAME = 'imagenet-mini'
 
 
 def download_mini_imagenet(save_path: str) -> None:

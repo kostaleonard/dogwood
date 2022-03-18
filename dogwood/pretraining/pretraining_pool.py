@@ -3,21 +3,30 @@
 from __future__ import annotations
 import os
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.applications.vgg16 import VGG16
 from mlops.model.versioned_model_builder import VersionedModelBuilder
-from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder
+from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder, \
+    STRATEGY_COPY_ZIP
 from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError
+from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
+from dogwood.pretraining.mini_imagenet_loader import download_mini_imagenet, \
+    MINI_IMAGENET_DIRNAME
 from dogwood import DOGWOOD_DIR
 
 PRETRAINED_DIRNAME = os.path.join(DOGWOOD_DIR, 'pretrained')
 MODEL_VGG16 = 'VGG16'
+VGG16_VERSION = 'v1'
 OPEN_SOURCE_MODELS = {MODEL_VGG16}
 DEFAULT_MODELS = 'default'
+DATASET_MINI_IMAGENET = 'imagenet-mini'
+MINI_IMAGENET_VERSION = 'v1'
+MODEL_DATASETS = {MODEL_VGG16: DATASET_MINI_IMAGENET}
 
 
 class PretrainingPool:
@@ -33,7 +42,7 @@ class PretrainingPool:
     dirname/
         models/
             model_name_1/version/
-                model_name_1.h5 (the saved model)
+                model.h5 (the saved model)
                 meta.json (metadata)
             ...
         datasets/
@@ -91,23 +100,44 @@ class PretrainingPool:
         Path(self.models_dirname).mkdir(parents=True, exist_ok=True)
         Path(self.datasets_dirname).mkdir(parents=True, exist_ok=True)
         for model_name in self.with_models:
+            model_dataset = MODEL_DATASETS[model_name]
+            # Populate dataset.
+            if model_dataset == DATASET_MINI_IMAGENET:
+                self._populate_mini_imagenet()
+            # Populate model.
             if model_name == MODEL_VGG16:
                 self._populate_vgg16()
 
-            model_dirname = os.path.join(self.models_dirname, model_name)
-            if not os.path.exists(model_dirname):
-                os.mkdir(model_dirname)
-            model_path = os.path.join(model_dirname, f'{model_name}.h5')
-            X_train_path = os.path.join(model_dirname, 'X_train.npy')
-            y_train_path = os.path.join(model_dirname, 'y_train.npy')
-            if not os.path.exists(model_path):
-                pass
-            # TODO download dataset to tempdir
-            # TODO publish versioned dataset from files in tempdir
+    def _populate_mini_imagenet(self) -> None:
+        """Instantiates the mini ImageNet dataset, if it does not exist."""
+        publication_path = os.path.join(
+            self.datasets_dirname, DATASET_MINI_IMAGENET)
+        if not os.path.exists(
+                os.path.join(publication_path, MINI_IMAGENET_VERSION)):
+            processor = ImageNetDataProcessor()
+            with TemporaryDirectory() as tempdir:
+                download_mini_imagenet(tempdir)
+                dataset_path = os.path.join(tempdir, MINI_IMAGENET_DIRNAME)
+                builder = VersionedDatasetBuilder(dataset_path, processor)
+                builder.publish(publication_path,
+                                version=MINI_IMAGENET_VERSION,
+                                dataset_copy_strategy=STRATEGY_COPY_ZIP,
+                                tags=['image'])
 
     def _populate_vgg16(self) -> None:
-        """Instantiates the VGG16 model and a mini-imagenet dataset."""
-        dataset_builder = VersionedDatasetBuilder()
+        """Instantiates the VGG16 model, if it does not exist."""
+        publication_path = os.path.join(self.models_dirname, MODEL_VGG16)
+        if not os.path.exists(os.path.join(publication_path, VGG16_VERSION)):
+            dataset_path = os.path.join(
+                self.datasets_dirname,
+                DATASET_MINI_IMAGENET,
+                MINI_IMAGENET_VERSION)
+            dataset = VersionedDataset(dataset_path)
+            model = VGG16()
+            builder = VersionedModelBuilder(dataset, model)
+            builder.publish(publication_path,
+                            version=VGG16_VERSION,
+                            tags=['image'])
 
     def add_model(self,
                   model: Model,
@@ -164,5 +194,6 @@ class PretrainingPool:
         # Determine model architecture similarity.
         # TODO
         # Transfer knowledge from similar tasks and architectures.
-        # TODO copy the first N layers and expand as necessary, maximizing performance on the training dataset? What about different architectures?
+        # TODO copy the first N layers and expand as necessary, maximizing performance on the training dataset?
+        # TODO What about different architectures?
         return model
