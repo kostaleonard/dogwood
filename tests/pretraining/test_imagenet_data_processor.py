@@ -58,6 +58,17 @@ def test_init_gets_class_index() -> None:
     assert processor.class_index['980'] == CLASS_INDEX_980
 
 
+def test_init_gets_designator_index() -> None:
+    """Tests that __init__ creates the designator index."""
+    processor = ImageNetDataProcessor()
+    assert processor.designator_index
+    assert len(processor.designator_index) == len(processor.class_index)
+    assert CLASS_INDEX_0[0] in processor.designator_index.keys()
+    assert processor.designator_index[CLASS_INDEX_0[0]] == '0'
+    assert CLASS_INDEX_980[0] in processor.designator_index.keys()
+    assert processor.designator_index[CLASS_INDEX_980[0]] == '980'
+
+
 @pytest.mark.slowtest
 def test_get_raw_features_and_labels_has_expected_keys(
         raw_features_and_labels: tuple[dict[str, np.ndarray],
@@ -197,14 +208,28 @@ def test_unpreprocess_features_is_identity_function() -> None:
 
 def test_preprocess_labels_correct_index() -> None:
     """Tests that preprocess_labels maps names to the correct index."""
-    # TODO
+    processor = ImageNetDataProcessor()
+    raw_labels = np.array([CLASS_INDEX_0[0], CLASS_INDEX_980[0]])
+    preprocessed_labels = processor.preprocess_labels(raw_labels)
+    assert preprocessed_labels.shape == (len(raw_labels), IMAGENET_CLASSES)
+    assert preprocessed_labels[0, 0] == 1
+    assert preprocessed_labels[1, 980] == 1
 
 
 def test_preprocess_labels_is_one_hot() -> None:
     """Tests that preprocess_labels returns a one-hot mapping."""
-    # TODO
+    processor = ImageNetDataProcessor()
+    raw_labels = np.array([CLASS_INDEX_0[0], CLASS_INDEX_980[0]])
+    preprocessed_labels = processor.preprocess_labels(raw_labels)
+    row_sums = preprocessed_labels.sum(axis=1)
+    assert (row_sums == 1).all()
+    assert set(np.unique(preprocessed_labels)) == {0, 1}
 
 
 def test_unpreprocess_labels_inverts_preprocessing() -> None:
     """Tests that unpreprocess_labels inverts preprocess_labels."""
-    # TODO
+    processor = ImageNetDataProcessor()
+    raw_labels = np.array([CLASS_INDEX_0[0], CLASS_INDEX_980[0]])
+    preprocessed_labels = processor.preprocess_labels(raw_labels)
+    unpreprocessed_labels = processor.unpreprocess_labels(preprocessed_labels)
+    assert np.array_equal(raw_labels, unpreprocessed_labels)

@@ -30,6 +30,8 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
     def __init__(self) -> None:
         """Instantiates the object."""
         self.class_index = ImageNetDataProcessor.get_class_index()
+        self.designator_index = ImageNetDataProcessor.get_designator_index(
+            self.class_index)
 
     @staticmethod
     def get_class_index() -> dict[str, list[str]]:
@@ -47,6 +49,19 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
             file_hash=CLASS_INDEX_HASH)
         with open(file_path, 'r', encoding='utf-8') as infile:
             return json.loads(infile.read())
+
+    @staticmethod
+    def get_designator_index(
+            class_index: dict[str, list[str]]) -> dict[str, str]:
+        """Returns the ImageNet designator index.
+
+        :param class_index: The ImageNet class index.
+        :return: The ImageNet designator index; a dictionary whose keys are the
+            class designators (e.g., 'n01440764') and whose values are the
+            class indices as strings (i.e., '0', '1', ..., '999').
+        """
+        return {designator_and_name[0]: idx
+                for idx, designator_and_name in class_index.items()}
 
     @staticmethod
     def _get_raw_features_and_labels_subset(
@@ -167,7 +182,11 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         :return: The preprocessed label tensor. This tensor is ready for
             downstream model consumption.
         """
-        # TODO
+        preprocessed = np.zeros((len(raw_label_tensor), len(self.class_index)))
+        for example_idx, designator in enumerate(raw_label_tensor):
+            class_idx = int(self.designator_index[designator])
+            preprocessed[example_idx, class_idx] = 1
+        return preprocessed
 
     def unpreprocess_features(self, feature_tensor: np.ndarray) -> np.ndarray:
         """Returns the raw feature tensor from the preprocessed tensor; inverts
@@ -188,4 +207,9 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         :param label_tensor: The preprocessed labels to be inverted.
         :return: The raw label tensor.
         """
-        # TODO
+        unpreprocessed = []
+        class_indices = np.argmax(label_tensor, axis=1)
+        for idx in class_indices:
+            designator = self.class_index[str(idx)][0]
+            unpreprocessed.append(designator)
+        return np.array(unpreprocessed)
