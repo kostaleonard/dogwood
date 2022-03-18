@@ -107,7 +107,7 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
             'X_test'} if the directory indicated by dataset_path ends with
             'trainvaltest', and {'X_pred'} otherwise.
         """
-        # TODO
+        # TODO raise error because no known format?
 
     def preprocess_features(
             self, raw_feature_tensor: np.ndarray) -> np.ndarray:

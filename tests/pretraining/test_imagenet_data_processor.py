@@ -3,15 +3,21 @@
 import os
 import pytest
 import numpy as np
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from dogwood.pretraining.mini_imagenet_loader import download_mini_imagenet
 from dogwood.pretraining.imagenet_data_processor import \
-    ImageNetDataProcessor, IMAGE_SCALE_HEIGHT, IMAGE_SCALE_WIDTH
+    ImageNetDataProcessor, IMAGE_SCALE_HEIGHT, IMAGE_SCALE_WIDTH, \
+    IMAGE_TARGET_SIZE
 
 IMAGENET_CLASSES = 1000
 CLASS_INDEX_0 = ['n01440764', 'tench']
 CLASS_INDEX_980 = ['n09472597', 'volcano']
 TEST_ROOT_PATH = '/tmp/test_imagenet_data_processor/'
 TEST_IMAGENET_PATH = os.path.join(TEST_ROOT_PATH, 'imagenet-mini')
+CLASS_INDEX_0_TRAIN_PATH = os.path.join(
+    TEST_IMAGENET_PATH, 'train', CLASS_INDEX_0[0])
+CLASS_INDEX_0_IMG_PATH = os.path.join(
+    CLASS_INDEX_0_TRAIN_PATH, 'n01440764_10043.JPEG')
 NUM_CHANNELS = 3
 PIXEL_MIN = 0
 PIXEL_MAX = 255
@@ -130,4 +136,14 @@ def test_get_raw_features_and_labels_match(
     :param raw_features_and_labels: The raw features and labels.
     """
     raw_features, raw_labels = raw_features_and_labels
-    # TODO
+    num_class_0 = len(os.listdir(CLASS_INDEX_0_TRAIN_PATH))
+    class_0_indices = raw_labels['y_train'] == CLASS_INDEX_0[0]
+    assert len(raw_labels['y_train'][class_0_indices]) == num_class_0
+    image = load_img(CLASS_INDEX_0_IMG_PATH, target_size=IMAGE_TARGET_SIZE)
+    target_tensor = img_to_array(image, dtype=np.uint8)
+    assert target_tensor.shape == raw_features['X_train'].shape[1:]
+    found_image = False
+    for train_tensor in raw_features['X_train'][class_0_indices]:
+        if np.array_equal(train_tensor, target_tensor):
+            found_image = True
+    assert found_image
