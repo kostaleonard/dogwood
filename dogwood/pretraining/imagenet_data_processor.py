@@ -48,6 +48,30 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         with open(file_path, 'r', encoding='utf-8') as infile:
             return json.loads(infile.read())
 
+    @staticmethod
+    def _get_raw_features_and_labels_subset(
+            subset_path: str) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the raw features and labels from the subset path.
+
+        :param subset_path: The path to the train/val/test subset.
+        :return: A 2-tuple of the features and labels tensors.
+        """
+        subset_features = []
+        subset_labels = []
+        class_dirnames = os.listdir(subset_path)
+        for class_name in class_dirnames:
+            class_images_path = os.path.join(subset_path, class_name)
+            image_names = os.listdir(class_images_path)
+            for image_name in image_names:
+                image_path = os.path.join(class_images_path, image_name)
+                image = load_img(image_path, target_size=IMAGE_TARGET_SIZE)
+                tensor = img_to_array(image, dtype=np.uint8)
+                subset_features.append(tensor)
+                subset_labels.append(class_name)
+        subset_features = np.array(subset_features, dtype=np.uint8)
+        subset_labels = np.array(subset_labels)
+        return subset_features, subset_labels
+
     def get_raw_features_and_labels(self, dataset_path: str) -> \
             tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Returns the raw feature and label tensors from the dataset path.
@@ -71,25 +95,17 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         """
         features = {}
         labels = {}
-        for subset in {'train', 'val'}:
+        for subset in {'train', 'val', 'test'}:
+            subset_path = os.path.join(dataset_path, subset)
+            if not os.path.exists(subset_path):
+                continue
+            subset_features, subset_labels = \
+                ImageNetDataProcessor._get_raw_features_and_labels_subset(
+                    subset_path)
             features_key = f'X_{subset}'
             labels_key = f'y_{subset}'
-            features[features_key] = []
-            labels[labels_key] = []
-            subset_path = os.path.join(dataset_path, subset)
-            class_dirnames = os.listdir(subset_path)
-            for class_name in class_dirnames:
-                class_images_path = os.path.join(subset_path, class_name)
-                image_names = os.listdir(class_images_path)
-                for image_name in image_names:
-                    image_path = os.path.join(class_images_path, image_name)
-                    image = load_img(image_path, target_size=IMAGE_TARGET_SIZE)
-                    tensor = img_to_array(image, dtype=np.uint8)
-                    features[features_key].append(tensor)
-                    labels[labels_key].append(class_name)
-            features[features_key] = np.array(features[features_key],
-                                              dtype=np.uint8)
-            labels[labels_key] = np.array(labels[labels_key])
+            features[features_key] = subset_features
+            labels[labels_key] = subset_labels
         return features, labels
 
     def get_raw_features(self, dataset_path: str) -> dict[str, np.ndarray]:
@@ -99,15 +115,29 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         number of channels (3 for RGB), with all values in the interval
         [0, 255]. The data type is uint8.
 
+        Images used for prediction should be in the same directory structure as
+        train/val/test images, namely that images should be in a subdirectory
+        under the name 'pred'. The name of the subdirectory(-ies) need not be
+        the class name, since in general that is not known beforehand.
+
         :param dataset_path: The path to the file or directory on the local or
             remote filesystem containing the dataset.
         :return: A dictionary whose values are feature tensors and whose
             corresponding keys are the names by which those tensors should be
-            referenced. The returned keys will be {'X_train', 'X_val',
-            'X_test'} if the directory indicated by dataset_path ends with
-            'trainvaltest', and {'X_pred'} otherwise.
+            referenced. The returned keys will be a subset of {'X_train',
+            'X_val', 'X_test', 'X_pred'}.
         """
-        # TODO raise error because no known format?
+        features = {}
+        for subset in {'train', 'val', 'test', 'pred'}:
+            subset_path = os.path.join(dataset_path, subset)
+            if not os.path.exists(subset_path):
+                continue
+            subset_features, _ = \
+                ImageNetDataProcessor._get_raw_features_and_labels_subset(
+                    subset_path)
+            features_key = f'X_{subset}'
+            features[features_key] = subset_features
+        return features
 
     def preprocess_features(
             self, raw_feature_tensor: np.ndarray) -> np.ndarray:

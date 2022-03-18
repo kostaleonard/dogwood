@@ -36,6 +36,18 @@ def fixture_raw_features_and_labels() -> \
     return processor.get_raw_features_and_labels(TEST_IMAGENET_PATH)
 
 
+@pytest.fixture(name='raw_features', scope='module')
+def fixture_raw_features() -> dict[str, np.ndarray]:
+    """Returns the raw features.
+
+    :return: The raw features.
+    """
+    if not os.path.exists(TEST_IMAGENET_PATH):
+        download_mini_imagenet(TEST_ROOT_PATH)
+    processor = ImageNetDataProcessor()
+    return processor.get_raw_features(TEST_IMAGENET_PATH)
+
+
 def test_init_gets_class_index() -> None:
     """Tests that __init__ creates the class index."""
     processor = ImageNetDataProcessor()
@@ -147,3 +159,52 @@ def test_get_raw_features_and_labels_match(
         if np.array_equal(train_tensor, target_tensor):
             found_image = True
     assert found_image
+
+
+@pytest.mark.slowtest
+def test_get_raw_features_gets_train_and_val(
+        raw_features: dict[str, np.ndarray],
+        raw_features_and_labels: tuple[dict[str, np.ndarray],
+                                       dict[str, np.ndarray]]) -> None:
+    """Tests that get_raw_features gets the train and val sets.
+
+    :param raw_features: The raw features.
+    :param raw_features_and_labels: The raw features and labels.
+    """
+    raw_features_from_labels, _ = raw_features_and_labels
+    assert set(raw_features.keys()) == set(raw_features_from_labels.keys())
+    for subset, raw_tensor in raw_features.items():
+        raw_tensor_from_labels = raw_features_from_labels[subset]
+        assert raw_tensor.shape == raw_tensor_from_labels.shape
+        # Order may be different.
+        assert np.array_equal(raw_tensor.flatten().sort(),
+                              raw_tensor_from_labels.flatten().sort())
+
+
+def test_preprocess_features_is_identity_function() -> None:
+    """Tests that preprocess_features is the identity function."""
+    processor = ImageNetDataProcessor()
+    arr = np.array([[1, 2], [3, 4]])
+    assert np.array_equal(arr, processor.preprocess_features(arr))
+
+
+def test_unpreprocess_features_is_identity_function() -> None:
+    """Tests that unpreprocess_features is the identity function."""
+    processor = ImageNetDataProcessor()
+    arr = np.array([[1, 2], [3, 4]])
+    assert np.array_equal(arr, processor.unpreprocess_features(arr))
+
+
+def test_preprocess_labels_correct_index() -> None:
+    """Tests that preprocess_labels maps names to the correct index."""
+    # TODO
+
+
+def test_preprocess_labels_is_one_hot() -> None:
+    """Tests that preprocess_labels returns a one-hot mapping."""
+    # TODO
+
+
+def test_unpreprocess_labels_inverts_preprocessing() -> None:
+    """Tests that unpreprocess_labels inverts preprocess_labels."""
+    # TODO
