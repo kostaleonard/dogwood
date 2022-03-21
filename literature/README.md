@@ -62,6 +62,11 @@ This directory contains the literature review and associated files.
     Challenges the Monotonic Linear Interpolation property observed in previous
     research.
 
+1. [Neyshabur, 2020. What is being transferred in transfer learning?](https://proceedings.neurips.cc/paper/2020/file/0607f4c705595b911a4f3e7a127b44e0-Paper.pdf).
+
+    Classifies the knowledge transferred through model weights as "features" and
+    "low-level statistics."
+
 1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
     TODO

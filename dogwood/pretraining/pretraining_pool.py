@@ -149,6 +149,7 @@ class PretrainingPool:
         :param X_train: The model's training features.
         :param y_train: The model's training labels.
         """
+        # TODO create versioned dataset and model from these.
         model_dir = os.path.join(self.dirname, model.name)
         try:
             os.mkdir(model_dir)
@@ -169,10 +170,15 @@ class PretrainingPool:
         :param model: The versioned model.
         :param dataset: The versioned dataset.
         """
-        # TODO test this
-        # TODO we potentially want a special representation.
-        # TODO if no X_train/y_train, make user specify attr names.
-        # self.add_model(model.model, dataset.X_train, dataset.y_train)
+        # TODO custom error
+        if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
+            raise ValueError
+        dataset_publication_path = os.path.join(
+            self.datasets_dirname, dataset.name)
+        dataset.republish(dataset_publication_path)
+        model_publication_path = os.path.join(
+            self.models_dirname, model.name)
+        model.republish(model_publication_path)
 
     def get_pretrained_model(self,
                              model: Model,
