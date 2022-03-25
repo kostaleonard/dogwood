@@ -21,15 +21,6 @@ This directory contains the literature review and associated files.
 
     Defines and categorizes deep transfer learning.
 
-1. [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf).
-
-    TODO this is one of the foundational papers.
-
-1. [Wang, 2018. Deep visual domain adaptation: A survey](https://arxiv.org/pdf/1802.03601.pdf?ref=https://githubhelp.com)
-
-    TODO although this is focused on vision systems, the deep learning aspect
-    could be very informative.
-
 ## Topic papers
 
 1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
@@ -71,30 +62,10 @@ This directory contains the literature review and associated files.
 
     Introduces a similarity metric for comparing trained neural networks.
 
-1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
+1. [He, 2019. Rethinking imageNet pre-training](https://openaccess.thecvf.com/content_ICCV_2019/papers/He_Rethinking_ImageNet_Pre-Training_ICCV_2019_paper.pdf).
 
-    TODO
-
-1. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
-
-    TODO Explores "adaptation layers" and a "discrepancy loss" for training
-    autoencoders for domain transfer.
-
-1. Wang, 2019. Characterizing and avoiding negative transfer.
-
-    TODO
-
-1. Lipton, 2018. The mythos of model interpretability.
-
-    TODO
-
-1. [Hu, 2018. Exploring Weight Symmetry in Deep Neural Networks](https://arxiv.org/abs/1812.11027).
-
-    TODO Finds that, in some convolutional and recurrent architectures, weight
-    symmetry does not significantly reduce model performance as might be
-    supposed. At the same time, weight symmetry reduces model size by 25%. Do
-    these results extend to all architectures? Do we need to worry about weight
-    symmetry at all?
+    Challenges the paradigm in the computer vision community that one must use
+    pretrained networks to achieve SOTA results.
 
 ## Books
 
