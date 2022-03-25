@@ -67,6 +67,10 @@ This directory contains the literature review and associated files.
     Classifies the knowledge transferred through model weights as "features" and
     "low-level statistics."
 
+1. [Kornblith, 2019. Similarity of Neural Network Representations Revisited](http://proceedings.mlr.press/v97/kornblith19a/kornblith19a.pdf).
+
+    Introduces a similarity metric for comparing trained neural networks.
+
 1. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
 
     TODO
