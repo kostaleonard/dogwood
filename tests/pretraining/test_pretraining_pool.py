@@ -5,6 +5,8 @@ import shutil
 import pytest
 import numpy as np
 from tensorflow.keras.models import Sequential
+from mlops.dataset.versioned_dataset import VersionedDataset
+from mlops.model.versioned_model import VersionedModel
 from dogwood.pretraining.pretraining_pool import PretrainingPool, \
     MODEL_VGG16, VGG16_VERSION, DATASET_MINI_IMAGENET, MINI_IMAGENET_VERSION
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
@@ -58,7 +60,7 @@ def test_init_unknown_model_raises_error() -> None:
         _ = PretrainingPool(TEST_DIRNAME, with_models='dne')
 
 
-def test_add_model_writes_files(
+def test_add_model_writes_versioned_files(
         mnist_model: Sequential,
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
                              tuple[np.ndarray, np.ndarray]]) -> None:
@@ -70,14 +72,39 @@ def test_add_model_writes_files(
     _clear_test_directory()
     (X_train, y_train), _ = mnist_dataset
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
-    pool.add_model(mnist_model, X_train, y_train)
-    # TODO need to change format
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, mnist_model.name, f'{mnist_model.name}.h5'))
+        pool.models_dirname, mnist_model.name, 'v1', 'model.h5'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, mnist_model.name, 'X_train.npy'))
+        pool.datasets_dirname, 'mnist', 'v1', 'X_train.npy'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, mnist_model.name, 'y_train.npy'))
+        pool.datasets_dirname, 'mnist', 'v1', 'y_train.npy'))
+
+
+@pytest.mark.slowtest
+def test_add_versioned_model_writes_versioned_files(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that add_versioned_model writes model and dataset files.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert os.path.exists(os.path.join(
+        pool.models_dirname, mnist_versioned_model.name, 'v1', 'model.h5'))
+    assert os.path.exists(os.path.join(
+        pool.datasets_dirname,
+        mnist_versioned_dataset.name,
+        'v1',
+        'X_train.npy'))
+    assert os.path.exists(os.path.join(
+        pool.datasets_dirname,
+        mnist_versioned_dataset.name,
+        'v1',
+        'y_train.npy'))
 
 
 def test_add_model_twice_raises_error(

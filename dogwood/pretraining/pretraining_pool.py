@@ -12,6 +12,8 @@ from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder, \
     STRATEGY_COPY_ZIP
 from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
+from mlops.dataset.pathless_versioned_dataset_builder import \
+    PathlessVersionedDatasetBuilder
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError
 from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
@@ -27,6 +29,7 @@ DEFAULT_MODELS = 'default'
 DATASET_MINI_IMAGENET = 'imagenet-mini'
 MINI_IMAGENET_VERSION = 'v1'
 MODEL_DATASETS = {MODEL_VGG16: DATASET_MINI_IMAGENET}
+TAG_USER_MODEL = 'user'
 
 
 class PretrainingPool:
@@ -142,25 +145,35 @@ class PretrainingPool:
     def add_model(self,
                   model: Model,
                   X_train: np.ndarray,
-                  y_train: np.ndarray) -> None:
+                  y_train: np.ndarray,
+                  dataset_name: str = 'dataset') -> None:
         """Adds the model to the pool.
 
         :param model: The model to add to the pool.
         :param X_train: The model's training features.
         :param y_train: The model's training labels.
+        :param dataset_name: The name of the dataset. If a dataset with this
+            name already exists, raises a PublicationPathAlreadyExistsError.
         """
-        # TODO create versioned dataset and model from these.
-        model_dir = os.path.join(self.dirname, model.name)
-        try:
-            os.mkdir(model_dir)
-        except FileExistsError as exc:
-            raise PretrainingPoolAlreadyContainsModelError from exc
-        model_path = os.path.join(model_dir, f'{model.name}.h5')
-        X_train_path = os.path.join(model_dir, 'X_train.npy')
-        y_train_path = os.path.join(model_dir, 'y_train.npy')
-        model.save(model_path)
-        np.save(X_train_path, X_train)
-        np.save(y_train_path, y_train)
+        # TODO OK if dataset already exists?
+        # TODO catch model publication error and reraise as pool already contains model error
+        features = {'X_train': X_train}
+        labels = {'y_train': y_train}
+        dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
+        dataset_publication_path = os.path.join(
+            self.datasets_dirname, dataset_name)
+        dataset_builder.publish(dataset_publication_path,
+                                name=dataset_name,
+                                version='v1',
+                                tags=[TAG_USER_MODEL])
+        dataset = VersionedDataset(os.path.join(
+            dataset_publication_path, 'v1'))
+        model_builder = VersionedModelBuilder(dataset, model)
+        model_publication_path = os.path.join(self.models_dirname, model.name)
+        model_builder.publish(model_publication_path,
+                              name=model.name,
+                              version='v1',
+                              tags=[TAG_USER_MODEL])
 
     def add_versioned_model(self,
                             model: VersionedModel,
@@ -170,6 +183,7 @@ class PretrainingPool:
         :param model: The versioned model.
         :param dataset: The versioned dataset.
         """
+        # TODO OK if dataset already exists?
         # TODO custom error
         if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
             raise ValueError
