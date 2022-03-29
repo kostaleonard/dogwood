@@ -81,6 +81,49 @@ def test_add_model_writes_versioned_files(
         pool.datasets_dirname, 'mnist', 'v1', 'y_train.npy'))
 
 
+def test_add_model_reuses_dataset(
+        mnist_model: Sequential,
+        micro_mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that add_model allows dataset reuse.
+
+    :param mnist_model: The baseline model.
+    :param micro_mnist_model: A small MNIST model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    pool.add_model(micro_mnist_model, X_train, y_train, dataset_name='mnist')
+    assert os.path.exists(os.path.join(
+        pool.models_dirname, mnist_model.name, 'v1', 'model.h5'))
+    assert os.path.exists(os.path.join(
+        pool.models_dirname, micro_mnist_model.name, 'v1', 'model.h5'))
+    assert os.path.exists(os.path.join(
+        pool.datasets_dirname, 'mnist', 'v1', 'X_train.npy'))
+    assert os.path.exists(os.path.join(
+        pool.datasets_dirname, 'mnist', 'v1', 'y_train.npy'))
+
+
+def test_add_model_duplicate_model_raises_error(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that add_model raises an error on a duplicate model.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    with pytest.raises(PretrainingPoolAlreadyContainsModelError):
+        pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+
+
 @pytest.mark.slowtest
 def test_add_versioned_model_writes_versioned_files(
         mnist_versioned_dataset: VersionedDataset,
@@ -107,21 +150,52 @@ def test_add_versioned_model_writes_versioned_files(
         'y_train.npy'))
 
 
-def test_add_model_twice_raises_error(
-        mnist_model: Sequential,
-        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
-                             tuple[np.ndarray, np.ndarray]]) -> None:
-    """Tests that calling add_model twice on the same model raises an error.
+@pytest.mark.slowtest
+def test_add_versioned_model_reuses_dataset(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that add_versioned_model allows dataset reuse.
 
-    :param mnist_model: The baseline model.
-    :param mnist_dataset: The MNIST dataset.
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
     """
     _clear_test_directory()
-    (X_train, y_train), _ = mnist_dataset
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
-    pool.add_model(mnist_model, X_train, y_train)
+    original_model_name = mnist_versioned_model.name
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    mnist_versioned_model.name = 'mnist2'
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert os.path.exists(os.path.join(
+        pool.models_dirname, original_model_name, 'v1', 'model.h5'))
+    assert os.path.exists(os.path.join(
+        pool.models_dirname, mnist_versioned_model.name, 'v1', 'model.h5'))
+    assert os.path.exists(os.path.join(
+        pool.datasets_dirname,
+        mnist_versioned_dataset.name,
+        'v1',
+        'X_train.npy'))
+    assert os.path.exists(os.path.join(
+        pool.datasets_dirname,
+        mnist_versioned_dataset.name,
+        'v1',
+        'y_train.npy'))
+
+
+@pytest.mark.slowtest
+def test_add_versioned_model_duplicate_model_raises_error(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that add_versioned_model writes model and dataset files.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
     with pytest.raises(PretrainingPoolAlreadyContainsModelError):
-        pool.add_model(mnist_model, X_train, y_train)
+        pool.add_versioned_model(mnist_versioned_model,
+                                 mnist_versioned_dataset)
 
 
 @pytest.mark.slowtest

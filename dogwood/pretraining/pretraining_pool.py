@@ -14,6 +14,7 @@ from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
 from mlops.dataset.pathless_versioned_dataset_builder import \
     PathlessVersionedDatasetBuilder
+from mlops.errors import PublicationPathAlreadyExistsError
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError
 from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
@@ -155,25 +156,30 @@ class PretrainingPool:
         :param dataset_name: The name of the dataset. If a dataset with this
             name already exists, raises a PublicationPathAlreadyExistsError.
         """
-        # TODO OK if dataset already exists?
-        # TODO catch model publication error and reraise as pool already contains model error
         features = {'X_train': X_train}
         labels = {'y_train': y_train}
         dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
         dataset_publication_path = os.path.join(
             self.datasets_dirname, dataset_name)
-        dataset_builder.publish(dataset_publication_path,
-                                name=dataset_name,
-                                version='v1',
-                                tags=[TAG_USER_MODEL])
+        try:
+            dataset_builder.publish(dataset_publication_path,
+                                    name=dataset_name,
+                                    version='v1',
+                                    tags=[TAG_USER_MODEL])
+        except PublicationPathAlreadyExistsError:
+            # Allow dataset reuse between models.
+            pass
         dataset = VersionedDataset(os.path.join(
             dataset_publication_path, 'v1'))
         model_builder = VersionedModelBuilder(dataset, model)
         model_publication_path = os.path.join(self.models_dirname, model.name)
-        model_builder.publish(model_publication_path,
-                              name=model.name,
-                              version='v1',
-                              tags=[TAG_USER_MODEL])
+        try:
+            model_builder.publish(model_publication_path,
+                                  name=model.name,
+                                  version='v1',
+                                  tags=[TAG_USER_MODEL])
+        except PublicationPathAlreadyExistsError as err:
+            raise PretrainingPoolAlreadyContainsModelError from err
 
     def add_versioned_model(self,
                             model: VersionedModel,
@@ -183,16 +189,21 @@ class PretrainingPool:
         :param model: The versioned model.
         :param dataset: The versioned dataset.
         """
-        # TODO OK if dataset already exists?
         # TODO custom error
         if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
             raise ValueError
         dataset_publication_path = os.path.join(
             self.datasets_dirname, dataset.name)
-        dataset.republish(dataset_publication_path)
-        model_publication_path = os.path.join(
-            self.models_dirname, model.name)
-        model.republish(model_publication_path)
+        try:
+            dataset.republish(dataset_publication_path)
+        except PublicationPathAlreadyExistsError:
+            # Allow dataset reuse between models.
+            pass
+        model_publication_path = os.path.join(self.models_dirname, model.name)
+        try:
+            model.republish(model_publication_path)
+        except PublicationPathAlreadyExistsError as err:
+            raise PretrainingPoolAlreadyContainsModelError from err
 
     def get_pretrained_model(self,
                              model: Model,
