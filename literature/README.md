@@ -15,98 +15,57 @@ This directory contains the literature review and associated files.
 
 1. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com). 
 
-    Defines transfer learning in terms of reducing the data required to succeed
-    in a new domain, although we also want to focus on transferring the
-    knowledge to a different architecture (the domain may or may not change).
-    When we say that our research aims to make transfer learning the default
-    posture for any training regime, perhaps what we are really saying is that
-    we want to reduce the time (and hence data) required to succeed in the new
-    domain and/or new architecture to the minimum. So this definition is
-    consistent with our objectives. Semi-supervised learning is an alternative,
-    but requires that you can collect large amounts of unlabeled data in
-    addition to some labeled data. It is possible to achieve better results by
-    transferring knowledge from/to more than one domain. It seems that we are
-    most interested in parameter-based transfer learning. Many of the methods
-    discussed add regularizers for training the target model from scratch,
-    rather than devising methods to shorten training time by starting with some
-    pretrained weights. We may be able to use parameter restriction techniques
-    (as opposed to parameter sharing) in the deep transfer setting. Due to
-    differences in source/target distributions, directly combining data or
-    models may not be successful, which is why some researchers use data-based
-    approaches to transfer learning or model ensembling. Deep learning
-    approaches to transfer learning include stacked autoencoders (SDA, mSLDA,
-    TLDA) and adversarial deep learning (GAN--although not sure this really
-    counts, DANN). Deep learning approaches often add a distribution adaptation
-    loss term/regularizer to minimize the "distance" between the intermediate
-    (i.e., latent) representations of the source and target distributions.
-    
-    Contains good general insights, but focused on transfer learning in the
-    traditional ML setting, not really deep transfer learning. Notes that
-    adversarial learning is very powerful in deep transfer learning based on
-    experimental results.
-    
-    Suggested future work: measuring the transferability across domains and
-    avoiding negative transfer; interpretability of transfer learning
-    techniques.
+    Defines transfer learning and associated key terms.
 
-2. [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E).
+1. [Tan, 2018. A Survey on Deep Transfer Learning](https://arxiv.org/pdf/1808.01974.pdf%3E).
 
-    Defines deep transfer learning and organizes it into 4 categories:
-    instance-based, mapping-based, network-based, and adversarial-based. We are
-    most interested in network-based (i.e., parameter-based or model-based)
-    approaches. Notes that the first layers of a neural network function as
-    feature extractors, and the extracted features are versatile.
-
-3. [Pan, 2010. A Survey on Transfer Learning](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.147.9185&rep=rep1&type=pdf).
-
-    TODO this is one of the foundational papers.
-
-4. [Wang, 2018. Deep visual domain adaptation: A survey](https://arxiv.org/pdf/1802.03601.pdf?ref=https://githubhelp.com)
-
-    TODO although this is focused on vision systems, the deep learning aspect
-    could be very informative.
+    Defines and categorizes deep transfer learning.
 
 ## Topic papers
 
+1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
+
+    Quantifies layer generality/specificity--i.e., how well features in a given
+    layer transfer between tasks.
+
 1. [Knyazev, 2021. Parameter Prediction for Unseen Deep Architectures](https://arxiv.org/abs/2110.13100).
 
-    TODO
+    Trains a graph hypernetwork to predict the parameters of a wide range of
+    architectures on ImageNet and CIFAR-10.
 
-2. [Luo, 2008. Transfer learning from multiple source domains via consensus regularization](https://dl.acm.org/doi/pdf/10.1145/1458082.1458099?casa_token=AgWZfrnGhVsAAAAA:BWj-fjIN38cM5eQ6OXJQJqOKub0KnxsQFCf2hOjnBsOG4fiYE2N5OBovYLwusTVSeEviFxiIPtk).
+1. [Brock, 2017. FreezeOut: Accelerate training by progressively freezing layers](https://arxiv.org/pdf/1706.04983.pdf?source=post_page---------------------------).
 
-    TODO
+    Decreases the learning rate for and, ultimately, freezes layers according to
+    a schedule, speeding up training marginally (20%) while preserving accuracy.
 
-3. Tzeng, 2014. Deep domain confusion: Maximizing for domain invariance.
+1. [Finn, 2017. Model-agnostic meta-learning for fast adaptation of deep networks](http://proceedings.mlr.press/v70/finn17a/finn17a.pdf).
 
-    TODO Explores "adaptation layers" and a "discrepancy loss" for training
-    autoencoders for domain transfer.
+    Introduces a meta-learning regime that trains a model to generalize to new
+    tasks in a few-shot setting.
 
-4. Masqood, 2019. Transfer learning assisted classification and detection of
-Alzheimer's disease stages using 3D MRI scans.
+1. [Fey, 2021. GNNAutoScale: Scalable and Expressive Graph Neural Networksvia Historical Embeddings](https://cs.stanford.edu/~jure/pubs/gnnautoscale-icml21.pdf).
 
-    TODO Recent example of deep transfer learning techniques in a biomedical
-    setting. The biomedical aspect is not what is interesting; this is a recent
-    example of how deep transfer learning is actually used in SOTA applications.
+    Uses historical embeddings to enable the training of GNNs on very large
+    graphs.
 
-5. Wang, 2019. Characterizing and avoiding negative transfer.
+1. [Lucas, 2021. Analyzing Monotonic Linear Interpolation in Neural Network Loss Landscapes](http://proceedings.mlr.press/v139/lucas21a/lucas21a.pdf).
 
-    TODO
+    Challenges the Monotonic Linear Interpolation property observed in previous
+    research.
 
-6. Lipton, 2018. The mythos of model interpretability.
+1. [Neyshabur, 2020. What is being transferred in transfer learning?](https://proceedings.neurips.cc/paper/2020/file/0607f4c705595b911a4f3e7a127b44e0-Paper.pdf).
 
-    TODO
+    Classifies the knowledge transferred through model weights as "features" and
+    "low-level statistics."
 
-7. [Hu, 2018. Exploring Weight Symmetry in Deep Neural Networks](https://arxiv.org/abs/1812.11027).
+1. [Kornblith, 2019. Similarity of Neural Network Representations Revisited](http://proceedings.mlr.press/v97/kornblith19a/kornblith19a.pdf).
 
-    TODO Finds that, in some convolutional and recurrent architectures, weight
-    symmetry does not significantly reduce model performance as might be
-    supposed. At the same time, weight symmetry reduces model size by 25%. Do
-    these results extend to all architectures? Do we need to worry about weight
-    symmetry at all?
+    Introduces a similarity metric for comparing trained neural networks.
 
-8. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
+1. [He, 2019. Rethinking imageNet pre-training](https://openaccess.thecvf.com/content_ICCV_2019/papers/He_Rethinking_ImageNet_Pre-Training_ICCV_2019_paper.pdf).
 
-    TODO
+    Challenges the paradigm in the computer vision community that one must use
+    pretrained networks to achieve SOTA results.
 
 ## Books
 
@@ -263,6 +222,29 @@ traditional ML, matrix factorization is a popular strategy. [Zhuang, 2020. A Com
 model to a target model in which the target model uses similar, but not
 necessarily identical weights as the source model; a variant on parameter
 sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arxiv.org/pdf/1911.02685.pdf?ref=https://githubhelp.com)
+
+* Transfer learning training strategies [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf):
+
+    * Fine-tuning: When training on the new task, weight updates are allowed to
+    backpropagate through the entire network, including layers whose weights
+    were transferred from a pretrained model. If the target dataset is small,
+    this process may result in overfitting; if the target dataset is
+    sufficiently large, there is an expected performance gain over weight
+    freezing.
+    
+    * Weight freezing: When training on the new task, the layers whose weights
+    were transferred from a pretrained model are not updated. Using frozen
+    features preserved generality.
+
+* Fragile co-adaptation: The phenomenon that features in successive layers of a
+neural network interact with each other in a complex or fragile way such that
+this co-adaptation cannot be relearned by the upper layers alone when lower
+layers are frozen and transferred. Fragile co-adaptation tends to occur in the
+middle of a network: in the lower layers, features are general and little
+co-adaptation occurs; in the upper layers, there is less to learn if the network
+is frozen from that point, so gradient descent can find a good solution. But in
+the middle layers, freezing and transferring can cause significant performance
+degradation. Fine-tuning appears to counteract fragile co-adaptation. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
 
 ## Questions
 

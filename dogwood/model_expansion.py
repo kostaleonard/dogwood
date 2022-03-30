@@ -1,4 +1,4 @@
-"""Contains functions to transfer knowledge from pretrained model weights."""
+"""Contains functions to expand layers and models."""
 # pylint: disable=no-name-in-module
 
 from __future__ import annotations
