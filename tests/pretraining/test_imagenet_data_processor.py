@@ -1,4 +1,5 @@
 """Tests imagenet_data_processor.py."""
+# pylint: disable=no-name-in-module
 
 import os
 import pytest
@@ -145,7 +146,7 @@ def test_get_raw_features_and_labels_valid_labels(
     class_index = ImageNetDataProcessor.get_class_index()
     class_designators = {designator_and_name[0]
                          for designator_and_name in class_index.values()}
-    for subset in {'y_train', 'y_val'}:
+    for subset in 'y_train', 'y_val':
         for label in raw_labels[subset]:
             assert label in class_designators
 

@@ -1,4 +1,5 @@
 """Tests pretraining_pool.py."""
+# pylint: disable=no-name-in-module
 
 import os
 import shutil
@@ -10,7 +11,7 @@ from mlops.model.versioned_model import VersionedModel
 from dogwood.pretraining.pretraining_pool import PretrainingPool, \
     MODEL_VGG16, VGG16_VERSION, DATASET_MINI_IMAGENET, MINI_IMAGENET_VERSION
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError
+    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
 
 TEST_DIRNAME = '/tmp/test_pretraining_pool/pretrained'
 
@@ -52,12 +53,20 @@ def test_init_gets_models_and_datasets() -> None:
         TEST_DIRNAME, 'models', MODEL_VGG16, VGG16_VERSION, 'model.h5'))
 
 
-def test_init_unknown_model_raises_error() -> None:
+def test_init_unknown_model_str_raises_error() -> None:
     """Tests that __init__ raises an error when called with an unknown open
-    source model."""
+    source model as a string."""
     _clear_test_directory()
     with pytest.raises(NoSuchOpenSourceModelError):
         _ = PretrainingPool(TEST_DIRNAME, with_models='dne')
+
+
+def test_init_unknown_model_set_raises_error() -> None:
+    """Tests that __init__ raises an error when called with an unknown open
+    source model as part of a set."""
+    _clear_test_directory()
+    with pytest.raises(NoSuchOpenSourceModelError):
+        _ = PretrainingPool(TEST_DIRNAME, with_models={MODEL_VGG16, 'dne'})
 
 
 def test_add_model_writes_versioned_files(
@@ -199,6 +208,25 @@ def test_add_versioned_model_duplicate_model_raises_error(
 
 
 @pytest.mark.slowtest
+def test_add_versioned_model_no_training_data_raises_error(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that add_versioned_model raises an error when the dataset has no
+    recognized training/feature tensors.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    delattr(mnist_versioned_dataset, 'X_train')
+    with pytest.raises(UnrecognizedTrainingDatasetError):
+        pool.add_versioned_model(mnist_versioned_model,
+                                 mnist_versioned_dataset)
+
+
+@pytest.mark.xfail
+@pytest.mark.slowtest
 def test_get_pretrained_model_changes_weights(
         mnist_model: Sequential,
         large_mnist_model: Sequential,
@@ -210,6 +238,8 @@ def test_get_pretrained_model_changes_weights(
     :param large_mnist_model: The large model.
     :param mnist_dataset: The MNIST dataset.
     """
+    # This test is marked as xfail because successfully pretraining models is
+    # a huge research task that cannot be undertaken immediately. See #28.
     _clear_test_directory()
     (X_train, y_train), _ = mnist_dataset
     mnist_model.fit(X_train, y_train, batch_size=32, epochs=10)
@@ -227,6 +257,7 @@ def test_get_pretrained_model_changes_weights(
     assert not all_equal
 
 
+@pytest.mark.xfail
 @pytest.mark.slowtest
 def test_get_pretrained_model_improves_performance(
         mnist_model: Sequential,
@@ -240,6 +271,8 @@ def test_get_pretrained_model_improves_performance(
     :param large_mnist_model: The large model.
     :param mnist_dataset: The MNIST dataset.
     """
+    # This test is marked as xfail because successfully pretraining models is
+    # a huge research task that cannot be undertaken immediately. See #28.
     _clear_test_directory()
     (X_train, y_train), (X_test, y_test) = mnist_dataset
     mnist_model.fit(X_train, y_train, batch_size=32, epochs=10)

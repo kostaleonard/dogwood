@@ -19,3 +19,8 @@ class PretrainingPoolAlreadyContainsModelError(FileExistsError):
 class NoSuchOpenSourceModelError(ValueError):
     """Raised when a user attempts to instantiate a pretraining pool with an
     unknown or unsupported open source model."""
+
+
+class UnrecognizedTrainingDatasetError(ValueError):
+    """Raised when a user adds a dataset with no training feature/label tensors
+    to a pretraining pool."""

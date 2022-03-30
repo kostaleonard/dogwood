@@ -8,6 +8,7 @@ https://www.kaggle.com/ifigotin/imagenetmini-1000
 The Kaggle page links to a pytorch ImageNet preprocessing script that uses the
 same format, so this implementation will be applicable in many cases.
 """
+# pylint: disable=no-name-in-module
 
 import os
 import json
@@ -110,7 +111,7 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         """
         features = {}
         labels = {}
-        for subset in {'train', 'val', 'test'}:
+        for subset in 'train', 'val', 'test':
             subset_path = os.path.join(dataset_path, subset)
             if not os.path.exists(subset_path):
                 continue
@@ -143,7 +144,7 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
             'X_val', 'X_test', 'X_pred'}.
         """
         features = {}
-        for subset in {'train', 'val', 'test', 'pred'}:
+        for subset in 'train', 'val', 'test', 'pred':
             subset_path = os.path.join(dataset_path, subset)
             if not os.path.exists(subset_path):
                 continue

@@ -2,7 +2,7 @@
 
 from dogwood.errors import NotADenseLayerError, \
     InvalidExpansionStrategyError, PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError
+    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
 
 
 def test_not_a_dense_layer_error_extends_value_error() -> None:
@@ -27,4 +27,10 @@ def test_pool_contains_model_error_extends_file_exists_error() -> None:
 def test_no_such_open_source_model_error_extends_value_error() -> None:
     """Tests that NoSuchOpenSourceModelError extends ValueError."""
     err = NoSuchOpenSourceModelError()
+    assert isinstance(err, ValueError)
+
+
+def test_unrecognized_training_dataset_error_extends_value_error() -> None:
+    """Tests that UnrecognizedTrainingDatasetError extends ValueError."""
+    err = UnrecognizedTrainingDatasetError()
     assert isinstance(err, ValueError)

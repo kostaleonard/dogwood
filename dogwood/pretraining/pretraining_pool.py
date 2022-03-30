@@ -1,4 +1,5 @@
 """Contains the PretrainingPool class."""
+# pylint: disable=no-name-in-module
 
 from __future__ import annotations
 import os
@@ -16,7 +17,7 @@ from mlops.dataset.pathless_versioned_dataset_builder import \
     PathlessVersionedDatasetBuilder
 from mlops.errors import PublicationPathAlreadyExistsError
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError
+    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
 from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
 from dogwood.pretraining.mini_imagenet_loader import download_mini_imagenet, \
     MINI_IMAGENET_DIRNAME
@@ -82,6 +83,8 @@ class PretrainingPool:
         self.models_dirname = os.path.join(dirname, 'models')
         self.datasets_dirname = os.path.join(dirname, 'datasets')
         if isinstance(with_models, set):
+            if with_models - OPEN_SOURCE_MODELS:
+                raise NoSuchOpenSourceModelError
             self.with_models = with_models
         elif isinstance(with_models, str):
             if with_models == 'default':
@@ -189,9 +192,8 @@ class PretrainingPool:
         :param model: The versioned model.
         :param dataset: The versioned dataset.
         """
-        # TODO custom error
         if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
-            raise ValueError
+            raise UnrecognizedTrainingDatasetError
         dataset_publication_path = os.path.join(
             self.datasets_dirname, dataset.name)
         try:
@@ -220,11 +222,6 @@ class PretrainingPool:
         :return: A new instance of the given model with pretrained weights.
         """
         # Determine task similarity.
-        # TODO compare task embeddings or marginal/conditional distributions?
-        # TODO how can we compute task embeddings on arbitrary networks/datasets?
         # Determine model architecture similarity.
-        # TODO
         # Transfer knowledge from similar tasks and architectures.
-        # TODO copy the first N layers and expand as necessary, maximizing performance on the training dataset?
-        # TODO What about different architectures?
-        return model
+        raise NotImplementedError

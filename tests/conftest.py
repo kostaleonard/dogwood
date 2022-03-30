@@ -1,4 +1,5 @@
 """Defines pytest fixtures."""
+# pylint: disable=no-name-in-module
 
 import os
 import pytest
