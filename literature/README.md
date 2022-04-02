@@ -67,6 +67,11 @@ This directory contains the literature review and associated files.
     Challenges the paradigm in the computer vision community that one must use
     pretrained networks to achieve SOTA results.
 
+1. [Wei, 2018. Transfer Learning via Learning to Transfer](http://proceedings.mlr.press/v80/wei18a/wei18a.pdf)
+
+    Learns to perform feature-based transfer from previous transfer learning
+    experiences.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
