@@ -72,6 +72,12 @@ This directory contains the literature review and associated files.
     Learns to perform feature-based transfer from previous transfer learning
     experiences.
 
+1. [Wang, 2019. Characterizing and Avoiding Negative Transfer](https://openaccess.thecvf.com/content_CVPR_2019/papers/Wang_Characterizing_and_Avoiding_Negative_Transfer_CVPR_2019_paper.pdf)
+
+    Provides a mathematical definition for negative transfer and proposes an
+    improvement to adversarial feature extractors for transfer learning to avoid
+    it.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
