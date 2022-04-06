@@ -78,6 +78,11 @@ This directory contains the literature review and associated files.
     improvement to adversarial feature extractors for transfer learning to avoid
     it.
 
+1. [Devlin, 2019. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/pdf/1810.04805.pdf&usg=ALkJrhhzxlCL6yTht2BRmH9atgvKFxHsxQ)
+
+    Introduces BERT, a pre-trained bidirectional transformer model that can be
+    fine-tuned to achieve SOTA results on many NLP benchmarks.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
@@ -246,6 +251,8 @@ sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arx
     * Weight freezing: When training on the new task, the layers whose weights
     were transferred from a pretrained model are not updated. Using frozen
     features preserved generality.
+    
+    Note: Not all researchers make this distinction.
 
 * Fragile co-adaptation: The phenomenon that features in successive layers of a
 neural network interact with each other in a complex or fragile way such that
