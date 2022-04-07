@@ -283,3 +283,100 @@ def test_get_pretrained_model_improves_performance(
         large_mnist_model, X_train, y_train)
     acc_after_transfer = large_mnist_model.evaluate(X_test, y_test)[1]
     assert acc_after_transfer > acc_before_transfer
+
+
+def test_get_available_models_returns_correct_paths(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that get_available_models returns the correct model paths.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert not pool.get_available_models()
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    available_models = pool.get_available_models()
+    assert available_models == {
+        os.path.join(pool.models_dirname, mnist_model.name, 'v1')
+    }
+    model = VersionedModel(list(available_models)[0])
+    assert isinstance(model, VersionedModel)
+
+
+@pytest.mark.slowtest
+def test_get_available_models_returns_latest_paths(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that get_available_models returns the latest model paths, i.e.,
+    the paths with the highest versions.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    mnist_versioned_model.version = 'v2'
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert pool.get_available_models(latest_only=False) == {
+        os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v1'),
+        os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v2')
+    }
+    assert pool.get_available_models(latest_only=True) == {
+        os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v2')
+    }
+
+
+def test_get_available_datasets_returns_correct_paths(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that get_available_datasets returns the correct dataset paths.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert not pool.get_available_datasets()
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    available_datasets = pool.get_available_datasets()
+    assert available_datasets == {
+        os.path.join(pool.datasets_dirname, 'mnist', 'v1')
+    }
+    dataset = VersionedDataset(list(available_datasets)[0])
+    assert isinstance(dataset, VersionedDataset)
+
+
+@pytest.mark.slowtest
+def test_get_available_datasets_returns_latest_paths(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that get_available_datasets returns the latest dataset paths,
+    i.e., the paths with the highest versions.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    mnist_versioned_model.version = 'v2'
+    mnist_versioned_dataset.version = 'v2'
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert pool.get_available_datasets(latest_only=False) == {
+        os.path.join(
+            pool.datasets_dirname, mnist_versioned_dataset.name, 'v1'),
+        os.path.join(pool.datasets_dirname, mnist_versioned_dataset.name, 'v2')
+    }
+    assert pool.get_available_datasets(latest_only=True) == {
+        os.path.join(pool.datasets_dirname, mnist_versioned_dataset.name, 'v2')
+    }
+
+
+# TODO test that models in the pool have the correct dataset path

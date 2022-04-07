@@ -207,6 +207,32 @@ class PretrainingPool:
         except PublicationPathAlreadyExistsError as err:
             raise PretrainingPoolAlreadyContainsModelError from err
 
+    def get_available_models(self, latest_only: bool = True) -> set[str]:
+        """Returns the set of model paths available in the pool.
+
+        :param latest_only: If True, only return the highest versioned model
+            of each type. I.e., if there are both mnist_model/v1 and
+            mnist_model/v2, return only the path to v2. If False, return all
+            paths, regardless of version.
+        :return: The set of model paths available in the pool. All returned
+            paths will be VersionedModel paths, and will therefore include
+            the version suffix.
+        """
+        # TODO
+
+    def get_available_datasets(self, latest_only: bool = True) -> set[str]:
+        """Returns the set of dataset paths available in the pool.
+
+        :param latest_only: If True, only return the highest versioned dataset
+            of each type. I.e., if there are both mnist_dataset/v1 and
+            mnist_dataset/v2, return only the path to v2. If False, return all
+            paths, regardless of version.
+        :return: The set of dataset paths available in the pool. All returned
+            paths will be VersionedDataset paths, and will therefore include
+            the version suffix.
+        """
+        # TODO
+
     def get_pretrained_model(self,
                              model: Model,
                              X_train: np.ndarray,
