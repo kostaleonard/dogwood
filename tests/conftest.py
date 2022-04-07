@@ -2,6 +2,7 @@
 # pylint: disable=no-name-in-module
 
 import os
+import shutil
 import pytest
 import numpy as np
 from tensorflow.keras.datasets import mnist
@@ -150,18 +151,16 @@ def fixture_mnist_versioned_dataset(
     :param mnist_dataset: The MNIST dataset.
     :return: The preprocessed MNIST dataset as a VersionedDataset.
     """
+    shutil.rmtree(MNIST_DATASET_PUBLICATION_PATH, ignore_errors=True)
     (X_train, y_train), (X_test, y_test) = mnist_dataset
     features = {'X_train': X_train, 'X_test': X_test}
     labels = {'y_train': y_train, 'y_test': y_test}
     dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
-    try:
-        dataset_builder.publish(
-            MNIST_DATASET_PUBLICATION_PATH,
-            name='mnist',
-            version='v1',
-            tags=['fixture'])
-    except PublicationPathAlreadyExistsError:
-        pass
+    dataset_builder.publish(
+        MNIST_DATASET_PUBLICATION_PATH,
+        name='mnist',
+        version='v1',
+        tags=['fixture'])
     return VersionedDataset(os.path.join(MNIST_DATASET_PUBLICATION_PATH, 'v1'))
 
 
@@ -176,6 +175,7 @@ def fixture_mnist_versioned_model(
     :return: The versioned baseline model for use on MNIST. The model is fit
         to the dataset.
     """
+    shutil.rmtree(MNIST_MODEL_PUBLICATION_PATH, ignore_errors=True)
     train_args = {'batch_size': 32, 'epochs': 10}
     history = mnist_model.fit(
         mnist_versioned_dataset.X_train,
@@ -185,12 +185,9 @@ def fixture_mnist_versioned_model(
     training_config = TrainingConfig(history, train_args)
     model_builder = VersionedModelBuilder(
         mnist_versioned_dataset, mnist_model, training_config=training_config)
-    try:
-        model_builder.publish(
-            MNIST_MODEL_PUBLICATION_PATH,
-            name='mnist',
-            version='v1',
-            tags=['fixture'])
-    except PublicationPathAlreadyExistsError:
-        pass
+    model_builder.publish(
+        MNIST_MODEL_PUBLICATION_PATH,
+        name='mnist',
+        version='v1',
+        tags=['fixture'])
     return VersionedModel(os.path.join(MNIST_MODEL_PUBLICATION_PATH, 'v1'))

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from packaging.version import parse as parse_version
 import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.applications.vgg16 import VGG16
@@ -207,31 +208,60 @@ class PretrainingPool:
         except PublicationPathAlreadyExistsError as err:
             raise PretrainingPoolAlreadyContainsModelError from err
 
+    def _get_versioned_artifacts(
+            self, base_dir: str, latest_only: bool = True) -> set[str]:
+        """Returns the set of versioned artifacts from the base directory.
+
+        :param base_dir: The directory containing versioned artifacts; the
+            model or dataset directory.
+        :param latest_only: If True, only return the highest versioned artifact
+            of each type. E.g., if there are both mnist_model/v1 and
+            mnist_model/v2, return only the path to v2. If False, return all
+            paths, regardless of version.
+        """
+        # TODO
+
     def get_available_models(self, latest_only: bool = True) -> set[str]:
         """Returns the set of model paths available in the pool.
 
         :param latest_only: If True, only return the highest versioned model
-            of each type. I.e., if there are both mnist_model/v1 and
+            of each type. E.g., if there are both mnist_model/v1 and
             mnist_model/v2, return only the path to v2. If False, return all
             paths, regardless of version.
         :return: The set of model paths available in the pool. All returned
             paths will be VersionedModel paths, and will therefore include
             the version suffix.
         """
-        # TODO
+        # TODO call _get_versioned_artifacts
+        model_paths = set()
+        for model_name in os.listdir(self.models_dirname):
+            model_path = os.path.join(self.models_dirname, model_name)
+            model_versions = os.listdir(model_path)
+            if latest_only:
+                highest_version_idx = max(
+                    [idx for idx in range(len(model_versions))],
+                    key=lambda idx: parse_version(model_versions[idx]))
+                highest_version_path = os.path.join(
+                    model_path, model_versions[highest_version_idx])
+                model_paths.add(highest_version_path)
+            else:
+                for model_version in model_versions:
+                    version_path = os.path.join(model_path, model_version)
+                    model_paths.add(version_path)
+        return model_paths
 
     def get_available_datasets(self, latest_only: bool = True) -> set[str]:
         """Returns the set of dataset paths available in the pool.
 
         :param latest_only: If True, only return the highest versioned dataset
-            of each type. I.e., if there are both mnist_dataset/v1 and
+            of each type. E.g., if there are both mnist_dataset/v1 and
             mnist_dataset/v2, return only the path to v2. If False, return all
             paths, regardless of version.
         :return: The set of dataset paths available in the pool. All returned
             paths will be VersionedDataset paths, and will therefore include
             the version suffix.
         """
-        # TODO
+        # TODO call _get_versioned_artifacts
 
     def get_pretrained_model(self,
                              model: Model,
