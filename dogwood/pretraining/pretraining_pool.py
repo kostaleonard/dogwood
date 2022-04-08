@@ -208,8 +208,9 @@ class PretrainingPool:
         except PublicationPathAlreadyExistsError as err:
             raise PretrainingPoolAlreadyContainsModelError from err
 
+    @staticmethod
     def _get_versioned_artifacts(
-            self, base_dir: str, latest_only: bool = True) -> set[str]:
+            base_dir: str, latest_only: bool = True) -> set[str]:
         """Returns the set of versioned artifacts from the base directory.
 
         :param base_dir: The directory containing versioned artifacts; the
@@ -219,7 +220,23 @@ class PretrainingPool:
             mnist_model/v2, return only the path to v2. If False, return all
             paths, regardless of version.
         """
-        # TODO
+        artifact_paths = set()
+        for artifact_name in os.listdir(base_dir):
+            artifact_path = os.path.join(base_dir, artifact_name)
+            artifact_versions = os.listdir(artifact_path)
+            if latest_only:
+                highest_version_idx = max(
+                    [idx for idx in range(len(artifact_versions))],
+                    key=lambda idx: parse_version(artifact_versions[idx]))
+                highest_version_path = os.path.join(
+                    artifact_path, artifact_versions[highest_version_idx])
+                artifact_paths.add(highest_version_path)
+            else:
+                for artifact_version in artifact_versions:
+                    version_path = os.path.join(
+                        artifact_path, artifact_version)
+                    artifact_paths.add(version_path)
+        return artifact_paths
 
     def get_available_models(self, latest_only: bool = True) -> set[str]:
         """Returns the set of model paths available in the pool.
@@ -232,23 +249,8 @@ class PretrainingPool:
             paths will be VersionedModel paths, and will therefore include
             the version suffix.
         """
-        # TODO call _get_versioned_artifacts
-        model_paths = set()
-        for model_name in os.listdir(self.models_dirname):
-            model_path = os.path.join(self.models_dirname, model_name)
-            model_versions = os.listdir(model_path)
-            if latest_only:
-                highest_version_idx = max(
-                    [idx for idx in range(len(model_versions))],
-                    key=lambda idx: parse_version(model_versions[idx]))
-                highest_version_path = os.path.join(
-                    model_path, model_versions[highest_version_idx])
-                model_paths.add(highest_version_path)
-            else:
-                for model_version in model_versions:
-                    version_path = os.path.join(model_path, model_version)
-                    model_paths.add(version_path)
-        return model_paths
+        return PretrainingPool._get_versioned_artifacts(
+            self.models_dirname, latest_only=latest_only)
 
     def get_available_datasets(self, latest_only: bool = True) -> set[str]:
         """Returns the set of dataset paths available in the pool.
@@ -261,7 +263,8 @@ class PretrainingPool:
             paths will be VersionedDataset paths, and will therefore include
             the version suffix.
         """
-        # TODO call _get_versioned_artifacts
+        return PretrainingPool._get_versioned_artifacts(
+            self.datasets_dirname, latest_only=latest_only)
 
     def get_pretrained_model(self,
                              model: Model,
