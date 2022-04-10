@@ -133,6 +133,27 @@ def test_add_model_duplicate_model_raises_error(
         pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
 
 
+def test_add_model_correct_dataset_link(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that add_model correctly links the model to the dataset.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    model_path = os.path.join(pool.models_dirname, mnist_model.name, 'v1')
+    versioned_model = VersionedModel(model_path)
+    assert versioned_model.dataset_path == os.path.join(
+        pool.datasets_dirname, 'mnist', 'v1')
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    assert isinstance(versioned_dataset, VersionedDataset)
+
+
 @pytest.mark.slowtest
 def test_add_versioned_model_writes_versioned_files(
         mnist_versioned_dataset: VersionedDataset,
@@ -168,11 +189,12 @@ def test_add_versioned_model_reuses_dataset(
     :param mnist_versioned_dataset: The versioned MNIST dataset.
     :param mnist_versioned_model: The versioned MNIST model.
     """
+    # pylint: disable=protected-access
     _clear_test_directory()
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     original_model_name = mnist_versioned_model.name
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
-    mnist_versioned_model.name = 'mnist2'
+    mnist_versioned_model._name = 'mnist2'
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
     assert os.path.exists(os.path.join(
         pool.models_dirname, original_model_name, 'v1', 'model.h5'))
@@ -223,6 +245,28 @@ def test_add_versioned_model_no_training_data_raises_error(
     with pytest.raises(UnrecognizedTrainingDatasetError):
         pool.add_versioned_model(mnist_versioned_model,
                                  mnist_versioned_dataset)
+
+
+@pytest.mark.slowtest
+def test_add_versioned_model_correct_dataset_link(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that add_versioned_model raises an error when the dataset has no
+    recognized training/feature tensors.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    model_path = os.path.join(
+        pool.models_dirname, mnist_versioned_model.name, 'v1')
+    versioned_model = VersionedModel(model_path)
+    assert versioned_model.dataset_path == os.path.join(
+        pool.datasets_dirname, mnist_versioned_dataset.name, 'v1')
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    assert isinstance(versioned_dataset, VersionedDataset)
 
 
 @pytest.mark.xfail
@@ -283,3 +327,99 @@ def test_get_pretrained_model_improves_performance(
         large_mnist_model, X_train, y_train)
     acc_after_transfer = large_mnist_model.evaluate(X_test, y_test)[1]
     assert acc_after_transfer > acc_before_transfer
+
+
+def test_get_available_models_returns_correct_paths(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that get_available_models returns the correct model paths.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert not pool.get_available_models()
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    available_models = pool.get_available_models()
+    assert available_models == {
+        os.path.join(pool.models_dirname, mnist_model.name, 'v1')
+    }
+    model = VersionedModel(list(available_models)[0])
+    assert isinstance(model, VersionedModel)
+
+
+@pytest.mark.slowtest
+def test_get_available_models_returns_latest_paths(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that get_available_models returns the latest model paths, i.e.,
+    the paths with the highest versions.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    # pylint: disable=protected-access
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    mnist_versioned_model._version = 'v2'
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert pool.get_available_models(latest_only=False) == {
+        os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v1'),
+        os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v2')
+    }
+    assert pool.get_available_models(latest_only=True) == {
+        os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v2')
+    }
+
+
+def test_get_available_datasets_returns_correct_paths(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that get_available_datasets returns the correct dataset paths.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert not pool.get_available_datasets()
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    available_datasets = pool.get_available_datasets()
+    assert available_datasets == {
+        os.path.join(pool.datasets_dirname, 'mnist', 'v1')
+    }
+    dataset = VersionedDataset(list(available_datasets)[0])
+    assert isinstance(dataset, VersionedDataset)
+
+
+@pytest.mark.slowtest
+def test_get_available_datasets_returns_latest_paths(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that get_available_datasets returns the latest dataset paths,
+    i.e., the paths with the highest versions.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    # pylint: disable=protected-access
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    mnist_versioned_model._version = 'v2'
+    mnist_versioned_dataset._version = 'v2'
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert pool.get_available_datasets(latest_only=False) == {
+        os.path.join(
+            pool.datasets_dirname, mnist_versioned_dataset.name, 'v1'),
+        os.path.join(pool.datasets_dirname, mnist_versioned_dataset.name, 'v2')
+    }
+    assert pool.get_available_datasets(latest_only=True) == {
+        os.path.join(pool.datasets_dirname, mnist_versioned_dataset.name, 'v2')
+    }
