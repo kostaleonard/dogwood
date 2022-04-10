@@ -197,16 +197,34 @@ class PretrainingPool:
             raise UnrecognizedTrainingDatasetError
         dataset_publication_path = os.path.join(
             self.datasets_dirname, dataset.name)
+        republished_dataset_path = os.path.join(
+            dataset_publication_path, dataset.version)
         try:
-            dataset.republish(dataset_publication_path)
+            republished_dataset_path = dataset.republish(
+                dataset_publication_path)
         except PublicationPathAlreadyExistsError:
             # Allow dataset reuse between models.
             pass
         model_publication_path = os.path.join(self.models_dirname, model.name)
         try:
-            model.republish(model_publication_path)
+            republished_model_path = model.republish(model_publication_path)
         except PublicationPathAlreadyExistsError as err:
             raise PretrainingPoolAlreadyContainsModelError from err
+        republished_model = VersionedModel(republished_model_path)
+        republished_model.update_metadata(
+            {'dataset': republished_dataset_path})
+
+    @staticmethod
+    def _argmax_version(artifact_versions: list[str]) -> int:
+        """Returns the index of the highest (most recent) version.
+
+        :param artifact_versions: The list of versions. Versions are in any PEP
+            440 compliant format.
+        :return: The index of the highest (most recent) version.
+        """
+        return max(
+            list(range(len(artifact_versions))),
+            key=lambda idx: parse_version(artifact_versions[idx]))
 
     @staticmethod
     def _get_versioned_artifacts(
@@ -225,9 +243,8 @@ class PretrainingPool:
             artifact_path = os.path.join(base_dir, artifact_name)
             artifact_versions = os.listdir(artifact_path)
             if latest_only:
-                highest_version_idx = max(
-                    [idx for idx in range(len(artifact_versions))],
-                    key=lambda idx: parse_version(artifact_versions[idx]))
+                highest_version_idx = PretrainingPool._argmax_version(
+                    artifact_versions)
                 highest_version_path = os.path.join(
                     artifact_path, artifact_versions[highest_version_idx])
                 artifact_paths.add(highest_version_path)

@@ -189,11 +189,12 @@ def test_add_versioned_model_reuses_dataset(
     :param mnist_versioned_dataset: The versioned MNIST dataset.
     :param mnist_versioned_model: The versioned MNIST model.
     """
+    # pylint: disable=protected-access
     _clear_test_directory()
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     original_model_name = mnist_versioned_model.name
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
-    mnist_versioned_model.name = 'mnist2'
+    mnist_versioned_model._name = 'mnist2'
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
     assert os.path.exists(os.path.join(
         pool.models_dirname, original_model_name, 'v1', 'model.h5'))
@@ -360,10 +361,11 @@ def test_get_available_models_returns_latest_paths(
     :param mnist_versioned_dataset: The versioned MNIST dataset.
     :param mnist_versioned_model: The versioned MNIST model.
     """
+    # pylint: disable=protected-access
     _clear_test_directory()
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
-    mnist_versioned_model.version = 'v2'
+    mnist_versioned_model._version = 'v2'
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
     assert pool.get_available_models(latest_only=False) == {
         os.path.join(pool.models_dirname, mnist_versioned_model.name, 'v1'),
@@ -406,11 +408,12 @@ def test_get_available_datasets_returns_latest_paths(
     :param mnist_versioned_dataset: The versioned MNIST dataset.
     :param mnist_versioned_model: The versioned MNIST model.
     """
+    # pylint: disable=protected-access
     _clear_test_directory()
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
-    mnist_versioned_model.version = 'v2'
-    mnist_versioned_dataset.version = 'v2'
+    mnist_versioned_model._version = 'v2'
+    mnist_versioned_dataset._version = 'v2'
     pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
     assert pool.get_available_datasets(latest_only=False) == {
         os.path.join(

@@ -14,7 +14,6 @@ from mlops.dataset.pathless_versioned_dataset_builder import \
 from mlops.model.versioned_model import VersionedModel
 from mlops.model.versioned_model_builder import VersionedModelBuilder
 from mlops.model.training_config import TrainingConfig
-from mlops.errors import PublicationPathAlreadyExistsError
 
 MAX_PIXEL_VALUE = 255
 MNIST_IMAGE_SHAPE = (28, 28)
@@ -28,7 +27,7 @@ MNIST_DATASET_PUBLICATION_PATH = os.path.join(DATASET_FIXTURES_PATH, 'mnist')
 MNIST_MODEL_PUBLICATION_PATH = os.path.join(MODEL_FIXTURES_PATH, 'mnist')
 
 
-@pytest.fixture(scope='session', name='mnist_dataset')
+@pytest.fixture(name='mnist_dataset')
 def fixture_mnist_dataset() -> tuple[tuple[np.ndarray, np.ndarray],
                                      tuple[np.ndarray, np.ndarray]]:
     """Returns the preprocessed MNIST dataset.
@@ -141,7 +140,7 @@ def fixture_micro_symmetry_dataset() -> tuple[np.ndarray, np.ndarray]:
     return X_train, y_train
 
 
-@pytest.fixture(scope='session', name='mnist_versioned_dataset')
+@pytest.fixture(name='mnist_versioned_dataset')
 def fixture_mnist_versioned_dataset(
         mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
                              tuple[np.ndarray, np.ndarray]]) -> \
