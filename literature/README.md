@@ -83,6 +83,11 @@ This directory contains the literature review and associated files.
     Introduces BERT, a pre-trained bidirectional transformer model that can be
     fine-tuned to achieve SOTA results on many NLP benchmarks.
 
+1. [Chronopoulou, 2019. An embarrassingly simple approach for transfer learning from pretrained language models](https://arxiv.org/pdf/1902.10547.pdf)
+
+    Adds a generic loss term during fine-tuning of language models to prevent
+    models from forgetting task-agnostic features.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
