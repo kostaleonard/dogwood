@@ -9,6 +9,7 @@ from packaging.version import parse as parse_version
 import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.applications.efficientnet import EfficientNetB7
 from mlops.model.versioned_model_builder import VersionedModelBuilder
 from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder, \
     STRATEGY_COPY_ZIP
@@ -27,11 +28,16 @@ from dogwood import DOGWOOD_DIR
 PRETRAINED_DIRNAME = os.path.join(DOGWOOD_DIR, 'pretrained')
 MODEL_VGG16 = 'VGG16'
 VGG16_VERSION = 'v1'
-OPEN_SOURCE_MODELS = {MODEL_VGG16}
+MODEL_EFFICIENTNETB7 = 'EfficientNetB7'
+EFFICIENTNETB7_VERSION = 'v1'
+OPEN_SOURCE_MODELS = {MODEL_VGG16, MODEL_EFFICIENTNETB7}
 DEFAULT_MODELS = 'default'
 DATASET_MINI_IMAGENET = 'imagenet-mini'
 MINI_IMAGENET_VERSION = 'v1'
-MODEL_DATASETS = {MODEL_VGG16: DATASET_MINI_IMAGENET}
+MODEL_DATASETS = {
+    MODEL_VGG16: DATASET_MINI_IMAGENET,
+    MODEL_EFFICIENTNETB7: DATASET_MINI_IMAGENET
+}
 TAG_USER_MODEL = 'user'
 
 
@@ -115,6 +121,8 @@ class PretrainingPool:
             # Populate model.
             if model_name == MODEL_VGG16:
                 self._populate_vgg16()
+            elif model_name == MODEL_EFFICIENTNETB7:
+                self._populate_efficientnetb7()
 
     def _populate_mini_imagenet(self) -> None:
         """Instantiates the mini ImageNet dataset, if it does not exist."""
@@ -145,6 +153,23 @@ class PretrainingPool:
             builder = VersionedModelBuilder(dataset, model)
             builder.publish(publication_path,
                             version=VGG16_VERSION,
+                            tags=['image'])
+
+    def _populate_efficientnetb7(self) -> None:
+        """Instantiates the EfficientNetB7 model, if it does not exist."""
+        publication_path = os.path.join(
+            self.models_dirname, MODEL_EFFICIENTNETB7)
+        if not os.path.exists(os.path.join(
+                publication_path, EFFICIENTNETB7_VERSION)):
+            dataset_path = os.path.join(
+                self.datasets_dirname,
+                DATASET_MINI_IMAGENET,
+                MINI_IMAGENET_VERSION)
+            dataset = VersionedDataset(dataset_path)
+            model = EfficientNetB7()
+            builder = VersionedModelBuilder(dataset, model)
+            builder.publish(publication_path,
+                            version=EFFICIENTNETB7_VERSION,
                             tags=['image'])
 
     def add_model(self,

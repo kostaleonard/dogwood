@@ -9,7 +9,8 @@ from tensorflow.keras.models import Sequential
 from mlops.dataset.versioned_dataset import VersionedDataset
 from mlops.model.versioned_model import VersionedModel
 from dogwood.pretraining.pretraining_pool import PretrainingPool, \
-    MODEL_VGG16, VGG16_VERSION, DATASET_MINI_IMAGENET, MINI_IMAGENET_VERSION
+    MODEL_VGG16, VGG16_VERSION, DATASET_MINI_IMAGENET, MINI_IMAGENET_VERSION, \
+    MODEL_EFFICIENTNETB7, EFFICIENTNETB7_VERSION
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
 
@@ -36,7 +37,7 @@ def test_init_creates_directory() -> None:
 def test_init_gets_models_and_datasets() -> None:
     """Tests that __init__ populates the pretraining directory."""
     _clear_test_directory()
-    _ = PretrainingPool(TEST_DIRNAME, with_models=MODEL_VGG16)
+    _ = PretrainingPool(TEST_DIRNAME)
     assert os.path.exists(os.path.join(
         TEST_DIRNAME,
         'datasets',
@@ -51,6 +52,12 @@ def test_init_gets_models_and_datasets() -> None:
         'y_train.npy'))
     assert os.path.exists(os.path.join(
         TEST_DIRNAME, 'models', MODEL_VGG16, VGG16_VERSION, 'model.h5'))
+    assert os.path.exists(os.path.join(
+        TEST_DIRNAME,
+        'models',
+        MODEL_EFFICIENTNETB7,
+        EFFICIENTNETB7_VERSION,
+        'model.h5'))
 
 
 def test_init_unknown_model_str_raises_error() -> None:
