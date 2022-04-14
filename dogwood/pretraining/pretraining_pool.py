@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 import os
+import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from packaging.version import parse as parse_version
@@ -136,6 +137,7 @@ class PretrainingPool:
                 dataset_path = os.path.join(tempdir, MINI_IMAGENET_DIRNAME)
                 builder = VersionedDatasetBuilder(dataset_path, processor)
                 builder.publish(publication_path,
+                                name=DATASET_MINI_IMAGENET,
                                 version=MINI_IMAGENET_VERSION,
                                 dataset_copy_strategy=STRATEGY_COPY_ZIP,
                                 tags=['image'])
@@ -152,6 +154,7 @@ class PretrainingPool:
             model = VGG16()
             builder = VersionedModelBuilder(dataset, model)
             builder.publish(publication_path,
+                            name=MODEL_VGG16,
                             version=VGG16_VERSION,
                             tags=['image'])
 
@@ -169,6 +172,7 @@ class PretrainingPool:
             model = EfficientNetB7()
             builder = VersionedModelBuilder(dataset, model)
             builder.publish(publication_path,
+                            name=MODEL_EFFICIENTNETB7,
                             version=EFFICIENTNETB7_VERSION,
                             tags=['image'])
 
@@ -307,6 +311,13 @@ class PretrainingPool:
         """
         return PretrainingPool._get_versioned_artifacts(
             self.datasets_dirname, latest_only=latest_only)
+
+    def clear(self) -> None:
+        """Removes all models and datasets from the pool."""
+        shutil.rmtree(self.datasets_dirname, ignore_errors=True)
+        shutil.rmtree(self.models_dirname, ignore_errors=True)
+        Path(self.models_dirname).mkdir(parents=True, exist_ok=True)
+        Path(self.datasets_dirname).mkdir(parents=True, exist_ok=True)
 
     def get_pretrained_model(self,
                              model: Model,

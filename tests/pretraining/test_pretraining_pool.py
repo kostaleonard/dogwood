@@ -430,3 +430,25 @@ def test_get_available_datasets_returns_latest_paths(
     assert pool.get_available_datasets(latest_only=True) == {
         os.path.join(pool.datasets_dirname, mnist_versioned_dataset.name, 'v2')
     }
+
+
+def test_clear_removes_files(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that clear removes all pool files.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist')
+    assert os.listdir(pool.datasets_dirname)
+    assert os.listdir(pool.models_dirname)
+    pool.clear()
+    assert os.path.exists(pool.datasets_dirname)
+    assert not os.listdir(pool.datasets_dirname)
+    assert os.path.exists(pool.models_dirname)
+    assert not os.listdir(pool.models_dirname)
