@@ -29,3 +29,8 @@ class UnrecognizedTrainingDatasetError(ValueError):
 class PretrainingPoolCannotCompileCustomModelError(ValueError):
     """Raised when a user attempts to call PretrainingPool.compile_model on a
     custom model."""
+
+
+class ArtifactNotInPoolError(ValueError):
+    """Raised when a user attempts to retrieve the path to a model or dataset
+    that is not in the PretrainingPool."""

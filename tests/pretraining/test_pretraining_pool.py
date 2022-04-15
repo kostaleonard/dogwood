@@ -14,7 +14,7 @@ from dogwood.pretraining.pretraining_pool import PretrainingPool, \
     EFFICIENTNETB7_INPUT_SHAPE
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError, \
-    PretrainingPoolCannotCompileCustomModelError
+    PretrainingPoolCannotCompileCustomModelError, ArtifactNotInPoolError
 
 TEST_DIRNAME = '/tmp/test_pretraining_pool/pretrained'
 
@@ -648,3 +648,69 @@ def test_get_dataset_path_returns_versioned_dataset_path(
     loaded_versioned_dataset = VersionedDataset(dataset_path)
     assert isinstance(loaded_versioned_dataset, VersionedDataset)
     assert loaded_versioned_dataset.name == mnist_versioned_dataset.name
+
+
+def test_get_model_path_invalid_name_raises_error() -> None:
+    """Tests that get_model_path raises an error when there is no artifact with
+    the specified name.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    with pytest.raises(ArtifactNotInPoolError):
+        _ = pool.get_model_path('dne')
+
+
+def test_get_dataset_path_invalid_name_raises_error() -> None:
+    """Tests that get_dataset_path raises an error when there is no artifact
+    with the specified name.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    with pytest.raises(ArtifactNotInPoolError):
+        _ = pool.get_dataset_path('dne')
+
+
+def test_contains_with_str(
+        mnist_model: Sequential,
+        mnist_dataset: tuple[tuple[np.ndarray, np.ndarray],
+                             tuple[np.ndarray, np.ndarray]]) -> None:
+    """Tests that __contains__ works on string input.
+
+    :param mnist_model: The baseline model.
+    :param mnist_dataset: The MNIST dataset.
+    """
+    _clear_test_directory()
+    (X_train, y_train), _ = mnist_dataset
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert 'mnist_model' not in pool
+    assert 'mnist_dataset' not in pool
+    pool.add_model(mnist_model, X_train, y_train, dataset_name='mnist_dataset')
+    assert 'mnist_model' in pool
+    assert 'mnist_dataset' in pool
+
+
+@pytest.mark.slowtest
+def test_contains_with_versioned_artifact(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that __contains__ works on versioned artifact input.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert mnist_versioned_model not in pool
+    assert mnist_versioned_dataset not in pool
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert mnist_versioned_model in pool
+    assert mnist_versioned_dataset in pool
+
+
+def test_contains_with_unrecognized_type() -> None:
+    """Tests that __contains__ returns False on unrecognized types."""
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    assert 1 not in pool
+    assert True not in pool
+    assert pool not in pool

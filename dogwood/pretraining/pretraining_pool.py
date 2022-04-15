@@ -15,17 +15,18 @@ from tensorflow.keras.applications.vgg16 import VGG16, \
     preprocess_input as preprocess_input_vgg16
 from tensorflow.keras.applications.efficientnet import EfficientNetB7, \
     preprocess_input as preprocess_input_effnet
+from mlops.artifact.versioned_artifact import VersionedArtifact
 from mlops.model.versioned_model_builder import VersionedModelBuilder
+from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder, \
     STRATEGY_COPY_ZIP
-from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
 from mlops.dataset.pathless_versioned_dataset_builder import \
     PathlessVersionedDatasetBuilder
 from mlops.errors import PublicationPathAlreadyExistsError
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError, \
-    PretrainingPoolCannotCompileCustomModelError
+    PretrainingPoolCannotCompileCustomModelError, ArtifactNotInPoolError
 from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
 from dogwood.pretraining.mini_imagenet_loader import download_mini_imagenet, \
     MINI_IMAGENET_DIRNAME
@@ -184,8 +185,34 @@ class PretrainingPool:
                             tags=['image'])
 
     def __contains__(self, item: Any) -> bool:
-        # TODO
-        pass
+        """Returns True if the item is a dataset or model in the pool.
+
+        :param item: The item to test for membership. It can be one of the
+            following.
+                str: Artifact (model or dataset) name.
+                VersionedModel
+                VersionedDataset
+        :return: True if the item is a dataset or model in the pool; False
+            otherwise.
+        """
+        artifact_name = None
+        if isinstance(item, str):
+            artifact_name = item
+        elif isinstance(item, VersionedArtifact):
+            artifact_name = item.name
+        in_pool = False
+        if artifact_name:
+            get_path_fns = (
+                lambda: self.get_model_path(artifact_name),
+                lambda: self.get_dataset_path(artifact_name)
+            )
+            for get_path_fn in get_path_fns:
+                try:
+                    _ = get_path_fn()
+                    in_pool = True
+                except ArtifactNotInPoolError:
+                    pass
+        return in_pool
 
     def add_model(self,
                   model: Model,
@@ -338,9 +365,11 @@ class PretrainingPool:
         :param model_name: The name of the model in the pool.
         :return: The path to the model; a VersionedModel path.
         """
-        # This will only ever return one path.
+        # This will return zero or one paths.
         model_paths = PretrainingPool._get_versioned_artifacts(
             self.models_dirname, latest_only=True, filter_names={model_name})
+        if not model_paths:
+            raise ArtifactNotInPoolError
         return list(model_paths)[0]
 
     def get_dataset_path(self, dataset_name: str) -> str:
@@ -349,11 +378,13 @@ class PretrainingPool:
         :param dataset_name: The name of the dataset in the pool.
         :return: The path to the dataset; a VersionedDataset path.
         """
-        # This will only ever return one path.
+        # This will return zero or one paths.
         dataset_paths = PretrainingPool._get_versioned_artifacts(
             self.datasets_dirname,
             latest_only=True,
             filter_names={dataset_name})
+        if not dataset_paths:
+            raise ArtifactNotInPoolError
         return list(dataset_paths)[0]
 
     def clear(self) -> None:
