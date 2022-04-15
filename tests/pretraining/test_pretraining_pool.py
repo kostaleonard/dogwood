@@ -472,6 +472,7 @@ def test_preprocess_dataset_vgg16_correct_transformation(
 
     :param full_pretraining_pool: The full pretraining pool.
     """
+    # pylint: disable=no-member
     model_path = full_pretraining_pool.get_model_path(MODEL_VGG16)
     versioned_model = VersionedModel(model_path)
     versioned_dataset = VersionedDataset(versioned_model.dataset_path)
@@ -494,6 +495,7 @@ def test_preprocess_dataset_efficientnetb7_correct_transformation(
 
     :param full_pretraining_pool: The full pretraining pool.
     """
+    # pylint: disable=no-member
     model_path = full_pretraining_pool.get_model_path(MODEL_EFFICIENTNETB7)
     versioned_model = VersionedModel(model_path)
     versioned_dataset = VersionedDataset(versioned_model.dataset_path)
@@ -518,6 +520,7 @@ def test_preprocess_dataset_custom_dataset_no_transformation(
     :param mnist_versioned_dataset: The versioned MNIST dataset.
     :param mnist_versioned_model: The versioned MNIST model.
     """
+    # pylint: disable=no-member
     X_in = mnist_versioned_dataset.X_train[:100]
     y_in = mnist_versioned_dataset.y_train[:100]
     X_out, y_out = PretrainingPool.preprocess_dataset(
@@ -603,11 +606,9 @@ def test_compile_model_open_source_compiles_model(
 
 @pytest.mark.slowtest
 def test_compile_model_custom_model_raises_error(
-        mnist_versioned_dataset: VersionedDataset,
         mnist_versioned_model: VersionedModel) -> None:
     """Tests that compile_model raises an error when used on a custom model.
 
-    :param mnist_versioned_dataset: The versioned MNIST dataset.
     :param mnist_versioned_model: The versioned MNIST model.
     """
     with pytest.raises(PretrainingPoolCannotCompileCustomModelError):
@@ -709,6 +710,7 @@ def test_contains_with_versioned_artifact(
 
 def test_contains_with_unrecognized_type() -> None:
     """Tests that __contains__ returns False on unrecognized types."""
+    # pylint: disable=comparison-with-itself
     _clear_test_directory()
     pool = PretrainingPool(TEST_DIRNAME, with_models=None)
     assert 1 not in pool

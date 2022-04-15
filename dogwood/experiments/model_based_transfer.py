@@ -15,7 +15,6 @@ def main() -> None:
     print('Datasets:')
     for dataset_path in pool.get_available_datasets():
         print(dataset_path)
-    # TODO add MNIST model here
     for model_path in pool.get_available_models():
         versioned_model = VersionedModel(model_path)
         versioned_dataset = VersionedDataset(versioned_model.dataset_path)
