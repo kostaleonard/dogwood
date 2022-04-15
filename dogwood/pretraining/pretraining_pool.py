@@ -218,60 +218,42 @@ class PretrainingPool:
                   model: Model,
                   X_train: np.ndarray,
                   y_train: np.ndarray,
-                  dataset_name: str = 'dataset') -> None:
+                  dataset_name: str = 'dataset') -> str:
         """Adds the model to the pool.
 
         :param model: The model to add to the pool.
         :param X_train: The model's training features.
         :param y_train: The model's training labels.
         :param dataset_name: The name of the dataset. If a dataset with this
-            name already exists, raises a PublicationPathAlreadyExistsError.
+            name already exists, it is assumed to be shared between models and
+            no error is raised.
+        :return: The model's publication path.
         """
-        features = {'X_train': X_train}
-        labels = {'y_train': y_train}
-        dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
-        dataset_publication_path = os.path.join(
-            self.datasets_dirname, dataset_name)
-        try:
-            dataset_builder.publish(dataset_publication_path,
-                                    name=dataset_name,
-                                    version='v1',
-                                    tags=[TAG_USER_MODEL])
-        except PublicationPathAlreadyExistsError:
-            # Allow dataset reuse between models.
-            pass
-        dataset = VersionedDataset(os.path.join(
-            dataset_publication_path, 'v1'))
+        dataset_publication_path = self.add_dataset(
+            X_train, y_train, dataset_name=dataset_name)
+        dataset = VersionedDataset(dataset_publication_path)
         model_builder = VersionedModelBuilder(dataset, model)
-        model_publication_path = os.path.join(self.models_dirname, model.name)
+        publication_base_path = os.path.join(self.models_dirname, model.name)
         try:
-            model_builder.publish(model_publication_path,
-                                  name=model.name,
-                                  version='v1',
-                                  tags=[TAG_USER_MODEL])
+            versioned_path = model_builder.publish(
+                publication_base_path,
+                name=model.name,
+                version='v1',
+                tags=[TAG_USER_MODEL])
         except PublicationPathAlreadyExistsError as err:
             raise PretrainingPoolAlreadyContainsModelError from err
+        return versioned_path
 
     def add_versioned_model(self,
                             model: VersionedModel,
-                            dataset: VersionedDataset) -> None:
+                            dataset: VersionedDataset) -> str:
         """Adds the versioned model to the pool.
 
         :param model: The versioned model.
         :param dataset: The versioned dataset.
+        :return: The model's publication path.
         """
-        if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
-            raise UnrecognizedTrainingDatasetError
-        dataset_publication_path = os.path.join(
-            self.datasets_dirname, dataset.name)
-        republished_dataset_path = os.path.join(
-            dataset_publication_path, dataset.version)
-        try:
-            republished_dataset_path = dataset.republish(
-                dataset_publication_path)
-        except PublicationPathAlreadyExistsError:
-            # Allow dataset reuse between models.
-            pass
+        republished_dataset_path = self.add_versioned_dataset(dataset)
         model_publication_path = os.path.join(self.models_dirname, model.name)
         try:
             republished_model_path = model.republish(model_publication_path)
@@ -280,6 +262,73 @@ class PretrainingPool:
         republished_model = VersionedModel(republished_model_path)
         republished_model.update_metadata(
             {'dataset': republished_dataset_path})
+        return republished_model_path
+
+    def add_dataset(
+            self,
+            X_train: np.ndarray,
+            y_train: np.ndarray,
+            dataset_name: str = 'dataset') -> str:
+        """Adds the dataset to the pool.
+
+        :param X_train: The training features.
+        :param y_train: The training labels.
+        :param dataset_name: The name of the dataset. If a dataset with this
+            name already exists, it is assumed to be shared between models and
+            no error is raised.
+        :return: The dataset's publication path.
+        """
+        features = {'X_train': X_train}
+        labels = {'y_train': y_train}
+        dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
+        publication_base_path = os.path.join(
+            self.datasets_dirname, dataset_name)
+        versioned_path = os.path.join(publication_base_path, 'v1')
+        try:
+            dataset_builder.publish(
+                publication_base_path,
+                name=dataset_name,
+                version='v1',
+                tags=[TAG_USER_MODEL])
+        except PublicationPathAlreadyExistsError:
+            # Allow dataset reuse between models.
+            pass
+        return versioned_path
+
+    def add_versioned_dataset(self, dataset: VersionedDataset) -> str:
+        """Adds the versioned dataset to the pool.
+
+        :param dataset: The versioned dataset.
+        :return: The dataset's publication path.
+        """
+        if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
+            raise UnrecognizedTrainingDatasetError
+        dataset_publication_path = os.path.join(
+            self.datasets_dirname, dataset.name)
+        republished_dataset_path = os.path.join(
+            dataset_publication_path, dataset.version)
+        try:
+            dataset.republish(dataset_publication_path)
+        except PublicationPathAlreadyExistsError:
+            # Allow dataset reuse between models.
+            pass
+        return republished_dataset_path
+
+    def remove_model(self, model_name: str) -> None:
+        """Removes all matching models, including previous versions.
+
+        :param model_name: The name of the model to remove.
+        """
+        # TODO raise ArtifactNotInPoolError if missing
+        # TODO test
+
+    def remove_dataset(self, dataset_name: str) -> None:
+        """Removes all matching datasets, including previous versions.
+
+        :param dataset_name: The name of the dataset to remove.
+        """
+        # TODO raise ArtifactNotInPoolError if missing
+        # TODO test
 
     @staticmethod
     def _argmax_version(artifact_versions: list[str]) -> int:
