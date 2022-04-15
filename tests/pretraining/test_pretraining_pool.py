@@ -612,3 +612,39 @@ def test_compile_model_custom_model_raises_error(
     """
     with pytest.raises(PretrainingPoolCannotCompileCustomModelError):
         PretrainingPool.compile_model(mnist_versioned_model)
+
+
+@pytest.mark.slowtest
+def test_get_model_path_returns_versioned_model_path(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that get_model_path returns a VersionedModel path.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    model_path = pool.get_model_path(mnist_versioned_model.name)
+    loaded_versioned_model = VersionedModel(model_path)
+    assert isinstance(loaded_versioned_model, VersionedModel)
+    assert loaded_versioned_model.name == mnist_versioned_model.name
+
+
+@pytest.mark.slowtest
+def test_get_dataset_path_returns_versioned_dataset_path(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that get_dataset_path returns a VersionedDataset path.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    dataset_path = pool.get_dataset_path(mnist_versioned_dataset.name)
+    loaded_versioned_dataset = VersionedDataset(dataset_path)
+    assert isinstance(loaded_versioned_dataset, VersionedDataset)
+    assert loaded_versioned_dataset.name == mnist_versioned_dataset.name

@@ -338,12 +338,23 @@ class PretrainingPool:
         :param model_name: The name of the model in the pool.
         :return: The path to the model; a VersionedModel path.
         """
-        # TODO test
-        # TODO add get_dataset_path
         # This will only ever return one path.
         model_paths = PretrainingPool._get_versioned_artifacts(
             self.models_dirname, latest_only=True, filter_names={model_name})
         return list(model_paths)[0]
+
+    def get_dataset_path(self, dataset_name: str) -> str:
+        """Returns the path to the given dataset.
+
+        :param dataset_name: The name of the dataset in the pool.
+        :return: The path to the dataset; a VersionedDataset path.
+        """
+        # This will only ever return one path.
+        dataset_paths = PretrainingPool._get_versioned_artifacts(
+            self.datasets_dirname,
+            latest_only=True,
+            filter_names={dataset_name})
+        return list(dataset_paths)[0]
 
     def clear(self) -> None:
         """Removes all models and datasets from the pool."""
