@@ -5,18 +5,6 @@ from mlops.model.versioned_model import VersionedModel
 from dogwood.pretraining.pretraining_pool import PretrainingPool
 
 
-def get_imagenet_accuracy(
-        versioned_dataset: VersionedDataset,
-        versioned_model: VersionedModel,
-        top_n: int = 1) -> float:
-    """TODO"""
-    return versioned_model.model(versioned_dataset.X_train)
-    return versioned_model.model.evaluate(
-        versioned_dataset.X_train,
-        versioned_dataset.y_train
-    )
-
-
 def main() -> None:
     """Runs the program."""
     pool = PretrainingPool()
@@ -27,12 +15,16 @@ def main() -> None:
     print('Datasets:')
     for dataset_path in pool.get_available_datasets():
         print(dataset_path)
+    # TODO add MNIST model here
     for model_path in pool.get_available_models():
         versioned_model = VersionedModel(model_path)
         versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+        PretrainingPool.compile_model(versioned_model)
         print(versioned_model.name)
         print(versioned_dataset.name)
-        #print(get_imagenet_accuracy(versioned_dataset, versioned_model))
+        metrics = PretrainingPool.eval_model(
+            versioned_model, versioned_dataset, frac=0.01)
+        print(metrics)
 
 
 if __name__ == '__main__':

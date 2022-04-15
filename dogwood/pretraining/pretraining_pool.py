@@ -8,9 +8,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from packaging.version import parse as parse_version
 import numpy as np
+from tensorflow.keras.preprocessing.image import smart_resize
 from tensorflow.keras.models import Model
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras.applications.efficientnet import EfficientNetB7
+from tensorflow.keras.applications.vgg16 import VGG16, \
+    preprocess_input as preprocess_input_vgg16
+from tensorflow.keras.applications.efficientnet import EfficientNetB7, \
+    preprocess_input as preprocess_input_effnet
 from mlops.model.versioned_model_builder import VersionedModelBuilder
 from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder, \
     STRATEGY_COPY_ZIP
@@ -29,8 +32,10 @@ from dogwood import DOGWOOD_DIR
 PRETRAINED_DIRNAME = os.path.join(DOGWOOD_DIR, 'pretrained')
 MODEL_VGG16 = 'VGG16'
 VGG16_VERSION = 'v1'
+VGG_INPUT_SHAPE = (224, 224)
 MODEL_EFFICIENTNETB7 = 'EfficientNetB7'
 EFFICIENTNETB7_VERSION = 'v1'
+EFFICIENTNETB7_INPUT_SHAPE = (600, 600)
 OPEN_SOURCE_MODELS = {MODEL_VGG16, MODEL_EFFICIENTNETB7}
 DEFAULT_MODELS = 'default'
 DATASET_MINI_IMAGENET = 'imagenet-mini'
@@ -319,10 +324,101 @@ class PretrainingPool:
         Path(self.models_dirname).mkdir(parents=True, exist_ok=True)
         Path(self.datasets_dirname).mkdir(parents=True, exist_ok=True)
 
-    def get_pretrained_model(self,
-                             model: Model,
-                             X_train: np.ndarray,
-                             y_train: np.ndarray) -> Model:
+    @staticmethod
+    def _preprocess_dataset_vgg16(
+            X: np.ndarray,
+            y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the preprocessed X and y for VGG16.
+
+        :param X: The input features in the same format as the model's
+            associated versioned dataset's features.
+        :param y: The input labels in the same format as the model's associated
+            versioned dataset's labels.
+        :return: The preprocessed X and y for VGG16.
+        """
+        X = smart_resize(X, VGG_INPUT_SHAPE)
+        X = preprocess_input_vgg16(X)
+        return X, y
+
+    @staticmethod
+    def _preprocess_dataset_efficientnetb7(
+            X: np.ndarray,
+            y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the preprocessed X and y for EfficientNetB7.
+
+        :param X: The input features in the same format as the model's
+            associated versioned dataset's features.
+        :param y: The input labels in the same format as the model's associated
+            versioned dataset's labels.
+        :return: The preprocessed X and y for EfficientNetB7.
+        """
+        X = smart_resize(X, EFFICIENTNETB7_INPUT_SHAPE)
+        X = preprocess_input_effnet(X)
+        return X, y
+
+    @staticmethod
+    def preprocess_dataset(
+            model_name: str,
+            X: np.ndarray,
+            y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the preprocessed X and y for the given model.
+
+        Some models require their datasets to be preprocessed because the
+        dataset is shared with other models that use a different
+        representation. User models will not have their datasets changed.
+
+        :param model_name: The name of the model whose dataset should be
+            preprocessed. Valid choices are any of the names in
+            OPEN_SOURCE_MODELS.
+        :param X: The input features in the same format as the model's
+            associated versioned dataset's features.
+        :param y: The input labels in the same format as the model's associated
+            versioned dataset's labels.
+        :return: The preprocessed X and y for the given model.
+        """
+        if model_name == MODEL_VGG16:
+            X, y = PretrainingPool._preprocess_dataset_vgg16(X, y)
+        elif model_name == MODEL_EFFICIENTNETB7:
+            X, y = PretrainingPool._preprocess_dataset_efficientnetb7(X, y)
+        # TODO test
+        return X, y
+
+    @staticmethod
+    def eval_model(
+            versioned_model: VersionedModel,
+            versioned_dataset: VersionedDataset,
+            frac: float = 1.0) -> float:
+        """TODO"""
+        # TODO test
+        # TODO return type needs to change
+        X_train = versioned_dataset.X_train
+        y_train = versioned_dataset.y_train
+        samples = int(len(X_train) * frac)
+        X_train = X_train[:samples]
+        y_train = y_train[:samples]
+        X_train, y_train = PretrainingPool.preprocess_dataset(
+            versioned_model.name, X_train, y_train)
+        return versioned_model.model.evaluate(X_train, y_train)
+
+    @staticmethod
+    def compile_model(versioned_model: VersionedModel) -> None:
+        """TODO"""
+        # TODO test
+        if versioned_model.name in (MODEL_VGG16, MODEL_EFFICIENTNETB7):
+            versioned_model.model.compile(
+                loss='categorical_crossentropy',
+                metrics=['accuracy', 'top_k_categorical_accuracy'])
+        else:
+            # TODO try generic compile
+            # TODO custom error
+            raise ValueError(f'Unsupported model: {versioned_model.name}')
+        # TODO test
+
+    def get_pretrained_model(
+            self,
+            model: Model,
+            X_train: np.ndarray,
+            y_train: np.ndarray) -> Model:
         """Returns a new instance of the given model with pretrained weights.
 
         Creates a new model of the same architecture as the input, but with the
