@@ -24,3 +24,8 @@ class NoSuchOpenSourceModelError(ValueError):
 class UnrecognizedTrainingDatasetError(ValueError):
     """Raised when a user adds a dataset with no training feature/label tensors
     to a pretraining pool."""
+
+
+class PretrainingPoolCannotCompileCustomModelError(ValueError):
+    """Raised when a user attempts to call PretrainingPool.compile_model on a
+    custom model."""

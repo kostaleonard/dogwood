@@ -13,7 +13,8 @@ from dogwood.pretraining.pretraining_pool import PretrainingPool, \
     MODEL_EFFICIENTNETB7, EFFICIENTNETB7_VERSION, VGG_INPUT_SHAPE, \
     EFFICIENTNETB7_INPUT_SHAPE
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
+    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError, \
+    PretrainingPoolCannotCompileCustomModelError
 
 TEST_DIRNAME = '/tmp/test_pretraining_pool/pretrained'
 
@@ -579,3 +580,35 @@ def test_eval_model_custom_model_correct_accuracy(
         mnist_versioned_model, mnist_versioned_dataset)
     acc = metrics[1]
     assert acc > 0.95
+
+
+@pytest.mark.slowtest
+@pytest.mark.veryslowtest
+def test_compile_model_open_source_compiles_model(
+        full_pretraining_pool: PretrainingPool) -> None:
+    """Tests that compile_model allows open source models to be evaluated.
+
+    :param full_pretraining_pool: The full pretraining pool.
+    """
+    model_path = full_pretraining_pool.get_model_path(MODEL_VGG16)
+    versioned_model = VersionedModel(model_path)
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    with pytest.raises(RuntimeError):
+        _ = PretrainingPool.eval_model(
+            versioned_model, versioned_dataset, frac=0.001)
+    PretrainingPool.compile_model(versioned_model)
+    _ = PretrainingPool.eval_model(
+        versioned_model, versioned_dataset, frac=0.001)
+
+
+@pytest.mark.slowtest
+def test_compile_model_custom_model_raises_error(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that compile_model raises an error when used on a custom model.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    with pytest.raises(PretrainingPoolCannotCompileCustomModelError):
+        PretrainingPool.compile_model(mnist_versioned_model)

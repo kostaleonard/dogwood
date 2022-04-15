@@ -24,7 +24,8 @@ from mlops.dataset.pathless_versioned_dataset_builder import \
     PathlessVersionedDatasetBuilder
 from mlops.errors import PublicationPathAlreadyExistsError
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
+    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError, \
+    PretrainingPoolCannotCompileCustomModelError
 from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
 from dogwood.pretraining.mini_imagenet_loader import download_mini_imagenet, \
     MINI_IMAGENET_DIRNAME
@@ -428,7 +429,6 @@ class PretrainingPool:
             indicating the loss, or a list of scalars indicating the loss and
             subsequent metric values, in order of compilation.
         """
-        # TODO test
         X_train = versioned_dataset.X_train
         y_train = versioned_dataset.y_train
         samples = int(len(X_train) * frac)
@@ -449,14 +449,12 @@ class PretrainingPool:
         :param versioned_model: The open source model to compile. Custom models
             will raise an error.
         """
-        # TODO test
         if versioned_model.name in (MODEL_VGG16, MODEL_EFFICIENTNETB7):
             versioned_model.model.compile(
                 loss='categorical_crossentropy',
                 metrics=['accuracy', 'top_k_categorical_accuracy'])
         else:
-            # TODO custom error
-            raise ValueError(f'Unsupported model: {versioned_model.name}')
+            raise PretrainingPoolCannotCompileCustomModelError
 
     def get_pretrained_model(
             self,
