@@ -10,6 +10,7 @@ IMAGENET_CLASSES = 1000
 
 
 @pytest.mark.slowtest
+@pytest.mark.veryslowtest
 def test_download_mini_imagenet_retrieves_files() -> None:
     """Tests that download_mini_imagenet gets the dataset."""
     shutil.rmtree(TEST_IMAGENET_PATH, ignore_errors=True)

@@ -3,6 +3,7 @@
 
 import os
 import shutil
+from pathlib import Path
 import pytest
 import numpy as np
 from tensorflow.keras.datasets import mnist
@@ -14,6 +15,8 @@ from mlops.dataset.pathless_versioned_dataset_builder import \
 from mlops.model.versioned_model import VersionedModel
 from mlops.model.versioned_model_builder import VersionedModelBuilder
 from mlops.model.training_config import TrainingConfig
+from dogwood.pretraining.pretraining_pool import PretrainingPool
+from dogwood.errors import PretrainingPoolAlreadyContainsModelError
 
 MAX_PIXEL_VALUE = 255
 MNIST_IMAGE_SHAPE = (28, 28)
@@ -21,10 +24,14 @@ MICRO_INPUT_LEN = 2
 MICRO_HIDDEN_LEN = 4
 MICRO_OUTPUT_LEN = 3
 FIXTURES_PATH = '/tmp/dogwood/fixtures'
+FIXTURES_PERSISTENT_PATH = os.path.join(
+    Path.home(), '.dogwood_persistent_fixtures')
 DATASET_FIXTURES_PATH = os.path.join(FIXTURES_PATH, 'datasets')
 MODEL_FIXTURES_PATH = os.path.join(FIXTURES_PATH, 'models')
 MNIST_DATASET_PUBLICATION_PATH = os.path.join(DATASET_FIXTURES_PATH, 'mnist')
 MNIST_MODEL_PUBLICATION_PATH = os.path.join(MODEL_FIXTURES_PATH, 'mnist')
+PRETRAINED_FIXTURES_PERSISTENT_PATH = os.path.join(
+    FIXTURES_PERSISTENT_PATH, 'pretrained')
 
 
 @pytest.fixture(name='mnist_dataset')
@@ -190,3 +197,25 @@ def fixture_mnist_versioned_model(
         version='v1',
         tags=['fixture'])
     return VersionedModel(os.path.join(MNIST_MODEL_PUBLICATION_PATH, 'v1'))
+
+
+@pytest.fixture(name='full_pretraining_pool')
+def fixture_full_pretraining_pool(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> PretrainingPool:
+    """Returns the full pretraining pool.
+
+    This fixture is stored in the persistent directory, so it will be expensive
+    to load once, but cheap every subsequent time.
+
+    :param mnist_versioned_dataset: The MNIST VersionedDataset.
+    :param mnist_versioned_model: The MNIST baseline model.
+    :return: The full pretraining pool in the persistent fixtures directory.
+    """
+    pool = PretrainingPool(PRETRAINED_FIXTURES_PERSISTENT_PATH)
+    try:
+        pool.add_versioned_model(
+            mnist_versioned_model, mnist_versioned_dataset)
+    except PretrainingPoolAlreadyContainsModelError:
+        pass
+    return pool

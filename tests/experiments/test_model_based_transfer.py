@@ -7,6 +7,7 @@ from dogwood.experiments.model_based_transfer import main
 
 
 @pytest.mark.slowtest
+@pytest.mark.veryslowtest
 def test_main_creates_pretraining_pool() -> None:
     """Tests that main creates a pretraining pool."""
     # We will not delete the existing pretraining directory because that would

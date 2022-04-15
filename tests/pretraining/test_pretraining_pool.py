@@ -10,7 +10,8 @@ from mlops.dataset.versioned_dataset import VersionedDataset
 from mlops.model.versioned_model import VersionedModel
 from dogwood.pretraining.pretraining_pool import PretrainingPool, \
     MODEL_VGG16, VGG16_VERSION, DATASET_MINI_IMAGENET, MINI_IMAGENET_VERSION, \
-    MODEL_EFFICIENTNETB7, EFFICIENTNETB7_VERSION
+    MODEL_EFFICIENTNETB7, EFFICIENTNETB7_VERSION, VGG_INPUT_SHAPE, \
+    EFFICIENTNETB7_INPUT_SHAPE
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
     NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
 
@@ -34,26 +35,33 @@ def test_init_creates_directory() -> None:
 
 
 @pytest.mark.slowtest
-def test_init_gets_models_and_datasets() -> None:
-    """Tests that __init__ populates the pretraining directory."""
-    _clear_test_directory()
-    _ = PretrainingPool(TEST_DIRNAME)
+@pytest.mark.veryslowtest
+def test_init_gets_models_and_datasets(
+        full_pretraining_pool: PretrainingPool) -> None:
+    """Tests that __init__ populates the pretraining directory.
+
+    :param full_pretraining_pool: The full pretraining pool.
+    """
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME,
+        full_pretraining_pool.dirname,
         'datasets',
         DATASET_MINI_IMAGENET,
         MINI_IMAGENET_VERSION,
         'X_train.npy'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME,
+        full_pretraining_pool.dirname,
         'datasets',
         DATASET_MINI_IMAGENET,
         MINI_IMAGENET_VERSION,
         'y_train.npy'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME, 'models', MODEL_VGG16, VGG16_VERSION, 'model.h5'))
+        full_pretraining_pool.dirname,
+        'models',
+        MODEL_VGG16,
+        VGG16_VERSION,
+        'model.h5'))
     assert os.path.exists(os.path.join(
-        TEST_DIRNAME,
+        full_pretraining_pool.dirname,
         'models',
         MODEL_EFFICIENTNETB7,
         EFFICIENTNETB7_VERSION,
@@ -452,3 +460,122 @@ def test_clear_removes_files(
     assert not os.listdir(pool.datasets_dirname)
     assert os.path.exists(pool.models_dirname)
     assert not os.listdir(pool.models_dirname)
+
+
+@pytest.mark.slowtest
+@pytest.mark.veryslowtest
+def test_preprocess_dataset_vgg16_correct_transformation(
+        full_pretraining_pool: PretrainingPool) -> None:
+    """Tests that preprocess_dataset correctly preprocesses ImageNet data for
+    VGG16.
+
+    :param full_pretraining_pool: The full pretraining pool.
+    """
+    model_path = full_pretraining_pool.get_model_path(MODEL_VGG16)
+    versioned_model = VersionedModel(model_path)
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    X_in = versioned_dataset.X_train[:100]
+    y_in = versioned_dataset.y_train[:100]
+    assert X_in.shape[1:] != (*VGG_INPUT_SHAPE, 3)
+    assert X_in.dtype != np.float32
+    X_out, y_out = PretrainingPool.preprocess_dataset(MODEL_VGG16, X_in, y_in)
+    assert X_out.shape[1:] == (*VGG_INPUT_SHAPE, 3)
+    assert X_out.dtype == np.float32
+    assert np.array_equal(y_in, y_out)
+
+
+@pytest.mark.slowtest
+@pytest.mark.veryslowtest
+def test_preprocess_dataset_efficientnetb7_correct_transformation(
+        full_pretraining_pool: PretrainingPool) -> None:
+    """Tests that preprocess_dataset correctly preprocesses ImageNet data for
+    EfficientNetB7.
+
+    :param full_pretraining_pool: The full pretraining pool.
+    """
+    model_path = full_pretraining_pool.get_model_path(MODEL_EFFICIENTNETB7)
+    versioned_model = VersionedModel(model_path)
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    X_in = versioned_dataset.X_train[:100]
+    y_in = versioned_dataset.y_train[:100]
+    assert X_in.shape[1:] != (*EFFICIENTNETB7_INPUT_SHAPE, 3)
+    assert X_in.dtype != np.float32
+    X_out, y_out = PretrainingPool.preprocess_dataset(
+        MODEL_EFFICIENTNETB7, X_in, y_in)
+    assert X_out.shape[1:] == (*EFFICIENTNETB7_INPUT_SHAPE, 3)
+    assert X_out.dtype == np.float32
+    assert np.array_equal(y_in, y_out)
+
+
+@pytest.mark.slowtest
+def test_preprocess_dataset_custom_dataset_no_transformation(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that preprocess_dataset performs no transformation on a custom
+    dataset.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    X_in = mnist_versioned_dataset.X_train[:100]
+    y_in = mnist_versioned_dataset.y_train[:100]
+    X_out, y_out = PretrainingPool.preprocess_dataset(
+        mnist_versioned_model.name, X_in, y_in)
+    assert np.array_equal(X_in, X_out)
+    assert np.array_equal(y_in, y_out)
+
+
+@pytest.mark.slowtest
+@pytest.mark.veryslowtest
+def test_eval_model_vgg16_correct_accuracy(
+        full_pretraining_pool: PretrainingPool) -> None:
+    """Tests that VGG16 achieves the correct accuracy when evaluated.
+
+    :param full_pretraining_pool: The full pretraining pool.
+    """
+    model_path = full_pretraining_pool.get_model_path(MODEL_VGG16)
+    versioned_model = VersionedModel(model_path)
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    PretrainingPool.compile_model(versioned_model)
+    metrics = PretrainingPool.eval_model(
+        versioned_model, versioned_dataset, frac=0.01)
+    top_1_acc = metrics[1]
+    top_5_acc = metrics[2]
+    assert top_1_acc >= 0.7
+    assert top_5_acc >= 0.89
+
+
+@pytest.mark.slowtest
+@pytest.mark.veryslowtest
+def test_eval_model_efficientnetb7_correct_accuracy(
+        full_pretraining_pool: PretrainingPool) -> None:
+    """Tests that EfficientNetB7 achieves the correct accuracy when evaluated.
+
+    :param full_pretraining_pool: The full pretraining pool.
+    """
+    model_path = full_pretraining_pool.get_model_path(MODEL_EFFICIENTNETB7)
+    versioned_model = VersionedModel(model_path)
+    versioned_dataset = VersionedDataset(versioned_model.dataset_path)
+    PretrainingPool.compile_model(versioned_model)
+    metrics = PretrainingPool.eval_model(
+        versioned_model, versioned_dataset, frac=0.01)
+    top_1_acc = metrics[1]
+    top_5_acc = metrics[2]
+    assert top_1_acc >= 0.72
+    assert top_5_acc >= 0.91
+
+
+@pytest.mark.slowtest
+def test_eval_model_custom_model_correct_accuracy(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that a custom user model achieves the correct accuracy when
+    evaluated.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    metrics = PretrainingPool.eval_model(
+        mnist_versioned_model, mnist_versioned_dataset)
+    acc = metrics[1]
+    assert acc > 0.95

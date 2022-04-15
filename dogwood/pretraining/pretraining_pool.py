@@ -2,6 +2,7 @@
 # pylint: disable=no-name-in-module
 
 from __future__ import annotations
+from typing import Any
 import os
 import shutil
 from pathlib import Path
@@ -181,6 +182,10 @@ class PretrainingPool:
                             version=EFFICIENTNETB7_VERSION,
                             tags=['image'])
 
+    def __contains__(self, item: Any) -> bool:
+        # TODO
+        pass
+
     def add_model(self,
                   model: Model,
                   X_train: np.ndarray,
@@ -262,7 +267,9 @@ class PretrainingPool:
 
     @staticmethod
     def _get_versioned_artifacts(
-            base_dir: str, latest_only: bool = True) -> set[str]:
+            base_dir: str,
+            latest_only: bool = True,
+            filter_names: set[str] | None = None) -> set[str]:
         """Returns the set of versioned artifacts from the base directory.
 
         :param base_dir: The directory containing versioned artifacts; the
@@ -271,9 +278,16 @@ class PretrainingPool:
             of each type. E.g., if there are both mnist_model/v1 and
             mnist_model/v2, return only the path to v2. If False, return all
             paths, regardless of version.
+        :param filter_names: If provided, only return paths to artifacts whose
+            names are in the set.
         """
         artifact_paths = set()
-        for artifact_name in os.listdir(base_dir):
+        artifact_names = os.listdir(base_dir)
+        if filter_names:
+            artifact_names = [
+                artifact_name for artifact_name in artifact_names
+                if artifact_name in filter_names]
+        for artifact_name in artifact_names:
             artifact_path = os.path.join(base_dir, artifact_name)
             artifact_versions = os.listdir(artifact_path)
             if latest_only:
@@ -316,6 +330,19 @@ class PretrainingPool:
         """
         return PretrainingPool._get_versioned_artifacts(
             self.datasets_dirname, latest_only=latest_only)
+
+    def get_model_path(self, model_name: str) -> str:
+        """Returns the path to the given model.
+
+        :param model_name: The name of the model in the pool.
+        :return: The path to the model; a VersionedModel path.
+        """
+        # TODO test
+        # TODO add get_dataset_path
+        # This will only ever return one path.
+        model_paths = PretrainingPool._get_versioned_artifacts(
+            self.models_dirname, latest_only=True, filter_names={model_name})
+        return list(model_paths)[0]
 
     def clear(self) -> None:
         """Removes all models and datasets from the pool."""
@@ -380,17 +407,28 @@ class PretrainingPool:
             X, y = PretrainingPool._preprocess_dataset_vgg16(X, y)
         elif model_name == MODEL_EFFICIENTNETB7:
             X, y = PretrainingPool._preprocess_dataset_efficientnetb7(X, y)
-        # TODO test
         return X, y
 
     @staticmethod
     def eval_model(
             versioned_model: VersionedModel,
             versioned_dataset: VersionedDataset,
-            frac: float = 1.0) -> float:
-        """TODO"""
+            frac: float = 1.0) -> float | list[float]:
+        """Evaluates the model on the dataset.
+
+        The model and dataset need not be in the pool, but models and datasets
+        recognized by the pool will be preprocessed as necessary.
+
+        :param versioned_model: The model to evaluate. This model need not be
+            in the pool, but if it is a known model, certain preprocessing
+            steps may be applied as necessary.
+        :param versioned_dataset: The dataset on which to evaluate the model.
+        :param frac: The fraction of the dataset on which to run evaluation.
+        :return: The model evaluation results; either a single scalar
+            indicating the loss, or a list of scalars indicating the loss and
+            subsequent metric values, in order of compilation.
+        """
         # TODO test
-        # TODO return type needs to change
         X_train = versioned_dataset.X_train
         y_train = versioned_dataset.y_train
         samples = int(len(X_train) * frac)
@@ -402,17 +440,23 @@ class PretrainingPool:
 
     @staticmethod
     def compile_model(versioned_model: VersionedModel) -> None:
-        """TODO"""
+        """Compiles the given model.
+
+        Open source models will be compiled using known-good configurations for
+        loss, metrics, etc. This function will raise an error on custom models,
+        since compilation procedures applied to them will likely be wrong.
+
+        :param versioned_model: The open source model to compile. Custom models
+            will raise an error.
+        """
         # TODO test
         if versioned_model.name in (MODEL_VGG16, MODEL_EFFICIENTNETB7):
             versioned_model.model.compile(
                 loss='categorical_crossentropy',
                 metrics=['accuracy', 'top_k_categorical_accuracy'])
         else:
-            # TODO try generic compile
             # TODO custom error
             raise ValueError(f'Unsupported model: {versioned_model.name}')
-        # TODO test
 
     def get_pretrained_model(
             self,
