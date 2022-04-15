@@ -714,3 +714,53 @@ def test_contains_with_unrecognized_type() -> None:
     assert 1 not in pool
     assert True not in pool
     assert pool not in pool
+
+
+@pytest.mark.slowtest
+def test_remove_model_removes_model(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that remove_model removes the model from the pool.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert mnist_versioned_model in pool
+    pool.remove_model(mnist_versioned_model.name)
+    assert mnist_versioned_model not in pool
+
+
+def test_remove_model_not_found_raises_error() -> None:
+    """Tests that remove_model raises an error if no model was found."""
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    with pytest.raises(ArtifactNotInPoolError):
+        pool.remove_model('dne')
+
+
+@pytest.mark.slowtest
+def test_remove_dataset_removes_dataset(
+        mnist_versioned_dataset: VersionedDataset,
+        mnist_versioned_model: VersionedModel) -> None:
+    """Tests that remove_dataset removes the dataset from the pool.
+
+    :param mnist_versioned_dataset: The versioned MNIST dataset.
+    :param mnist_versioned_model: The versioned MNIST model.
+    """
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    pool.add_versioned_model(mnist_versioned_model, mnist_versioned_dataset)
+    assert mnist_versioned_dataset in pool
+    pool.remove_dataset(mnist_versioned_dataset.name)
+    assert mnist_versioned_dataset not in pool
+
+
+def test_remove_dataset_not_found_raises_error() -> None:
+    """Tests that remove_dataset raises an error if no dataset was found."""
+    _clear_test_directory()
+    pool = PretrainingPool(TEST_DIRNAME, with_models=None)
+    with pytest.raises(ArtifactNotInPoolError):
+        pool.remove_dataset('dne')

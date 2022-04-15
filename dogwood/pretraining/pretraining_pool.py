@@ -319,16 +319,23 @@ class PretrainingPool:
 
         :param model_name: The name of the model to remove.
         """
-        # TODO raise ArtifactNotInPoolError if missing
-        # TODO test
+        if model_name not in self:
+            raise ArtifactNotInPoolError
+        model_path = os.path.join(self.models_dirname, model_name)
+        shutil.rmtree(model_path)
 
     def remove_dataset(self, dataset_name: str) -> None:
         """Removes all matching datasets, including previous versions.
 
+        Note that models using the given dataset will not have valid dataset
+        paths after this operation has completed.
+
         :param dataset_name: The name of the dataset to remove.
         """
-        # TODO raise ArtifactNotInPoolError if missing
-        # TODO test
+        if dataset_name not in self:
+            raise ArtifactNotInPoolError
+        dataset_path = os.path.join(self.datasets_dirname, dataset_name)
+        shutil.rmtree(dataset_path)
 
     @staticmethod
     def _argmax_version(artifact_versions: list[str]) -> int:

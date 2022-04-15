@@ -164,7 +164,7 @@ def fixture_mnist_versioned_dataset(
     dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
     dataset_builder.publish(
         MNIST_DATASET_PUBLICATION_PATH,
-        name='mnist',
+        name='mnist_dataset',
         version='v1',
         tags=['fixture'])
     return VersionedDataset(os.path.join(MNIST_DATASET_PUBLICATION_PATH, 'v1'))
@@ -193,7 +193,7 @@ def fixture_mnist_versioned_model(
         mnist_versioned_dataset, mnist_model, training_config=training_config)
     model_builder.publish(
         MNIST_MODEL_PUBLICATION_PATH,
-        name='mnist',
+        name='mnist_model',
         version='v1',
         tags=['fixture'])
     return VersionedModel(os.path.join(MNIST_MODEL_PUBLICATION_PATH, 'v1'))
