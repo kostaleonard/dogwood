@@ -240,7 +240,8 @@ def test_expand_dense_layer_increases_layer_size(
     :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
-    expanded = expand_dense_layer(micro_mnist_model, 'dense_1', num_new_neurons)
+    expanded = expand_dense_layer(
+        micro_mnist_model, 'dense_1', num_new_neurons)
     assert expanded.get_layer('dense_1').units == \
            micro_mnist_model.get_layer('dense_1').units + num_new_neurons
 
@@ -252,7 +253,8 @@ def test_expand_dense_layer_on_output_layer(
     :param micro_mnist_model: The baseline model.
     """
     num_new_neurons = 5
-    expanded = expand_dense_layer(micro_mnist_model, 'dense_2', num_new_neurons)
+    expanded = expand_dense_layer(
+        micro_mnist_model, 'dense_2', num_new_neurons)
     assert expanded.get_layer('dense_2').units == \
            micro_mnist_model.get_layer('dense_2').units + num_new_neurons
 
@@ -265,7 +267,10 @@ def test_expand_dense_layer_all_zero_same_output(
     """
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        micro_mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        micro_mnist_model,
+        'dense_1',
+        num_new_neurons,
+        strategy=STRATEGY_ALL_ZERO)
     batch = np.ones((2, *MNIST_IMAGE_SHAPE))
     assert np.isclose(micro_mnist_model(batch), expanded(batch)).all()
 
@@ -285,7 +290,10 @@ def test_expand_dense_layer_all_zero_causes_weight_symmetry(
     num_old_neurons = micro_mnist_model.get_layer('dense_1').units
     num_new_neurons = 5
     expanded = expand_dense_layer(
-        micro_mnist_model, 'dense_1', num_new_neurons, strategy=STRATEGY_ALL_ZERO)
+        micro_mnist_model,
+        'dense_1',
+        num_new_neurons,
+        strategy=STRATEGY_ALL_ZERO)
     expanded.compile(optimizer='adam',
                      loss='sparse_categorical_crossentropy',
                      metrics=['sparse_categorical_accuracy'])

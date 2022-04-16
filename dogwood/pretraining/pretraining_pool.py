@@ -2,23 +2,31 @@
 # pylint: disable=no-name-in-module
 
 from __future__ import annotations
+from typing import Any
 import os
+import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from packaging.version import parse as parse_version
 import numpy as np
+from tensorflow.keras.preprocessing.image import smart_resize
 from tensorflow.keras.models import Model
-from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.applications.vgg16 import VGG16, \
+    preprocess_input as preprocess_input_vgg16
+from tensorflow.keras.applications.efficientnet import EfficientNetB7, \
+    preprocess_input as preprocess_input_effnet
+from mlops.artifact.versioned_artifact import VersionedArtifact
 from mlops.model.versioned_model_builder import VersionedModelBuilder
+from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset_builder import VersionedDatasetBuilder, \
     STRATEGY_COPY_ZIP
-from mlops.model.versioned_model import VersionedModel
 from mlops.dataset.versioned_dataset import VersionedDataset
 from mlops.dataset.pathless_versioned_dataset_builder import \
     PathlessVersionedDatasetBuilder
 from mlops.errors import PublicationPathAlreadyExistsError
 from dogwood.errors import PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
+    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError, \
+    PretrainingPoolCannotCompileCustomModelError, ArtifactNotInPoolError
 from dogwood.pretraining.imagenet_data_processor import ImageNetDataProcessor
 from dogwood.pretraining.mini_imagenet_loader import download_mini_imagenet, \
     MINI_IMAGENET_DIRNAME
@@ -27,11 +35,18 @@ from dogwood import DOGWOOD_DIR
 PRETRAINED_DIRNAME = os.path.join(DOGWOOD_DIR, 'pretrained')
 MODEL_VGG16 = 'VGG16'
 VGG16_VERSION = 'v1'
-OPEN_SOURCE_MODELS = {MODEL_VGG16}
+VGG_INPUT_SHAPE = (224, 224)
+MODEL_EFFICIENTNETB7 = 'EfficientNetB7'
+EFFICIENTNETB7_VERSION = 'v1'
+EFFICIENTNETB7_INPUT_SHAPE = (600, 600)
+OPEN_SOURCE_MODELS = {MODEL_VGG16, MODEL_EFFICIENTNETB7}
 DEFAULT_MODELS = 'default'
 DATASET_MINI_IMAGENET = 'imagenet-mini'
 MINI_IMAGENET_VERSION = 'v1'
-MODEL_DATASETS = {MODEL_VGG16: DATASET_MINI_IMAGENET}
+MODEL_DATASETS = {
+    MODEL_VGG16: DATASET_MINI_IMAGENET,
+    MODEL_EFFICIENTNETB7: DATASET_MINI_IMAGENET
+}
 TAG_USER_MODEL = 'user'
 
 
@@ -115,6 +130,8 @@ class PretrainingPool:
             # Populate model.
             if model_name == MODEL_VGG16:
                 self._populate_vgg16()
+            elif model_name == MODEL_EFFICIENTNETB7:
+                self._populate_efficientnetb7()
 
     def _populate_mini_imagenet(self) -> None:
         """Instantiates the mini ImageNet dataset, if it does not exist."""
@@ -128,6 +145,7 @@ class PretrainingPool:
                 dataset_path = os.path.join(tempdir, MINI_IMAGENET_DIRNAME)
                 builder = VersionedDatasetBuilder(dataset_path, processor)
                 builder.publish(publication_path,
+                                name=DATASET_MINI_IMAGENET,
                                 version=MINI_IMAGENET_VERSION,
                                 dataset_copy_strategy=STRATEGY_COPY_ZIP,
                                 tags=['image'])
@@ -144,67 +162,98 @@ class PretrainingPool:
             model = VGG16()
             builder = VersionedModelBuilder(dataset, model)
             builder.publish(publication_path,
+                            name=MODEL_VGG16,
                             version=VGG16_VERSION,
                             tags=['image'])
+
+    def _populate_efficientnetb7(self) -> None:
+        """Instantiates the EfficientNetB7 model, if it does not exist."""
+        publication_path = os.path.join(
+            self.models_dirname, MODEL_EFFICIENTNETB7)
+        if not os.path.exists(os.path.join(
+                publication_path, EFFICIENTNETB7_VERSION)):
+            dataset_path = os.path.join(
+                self.datasets_dirname,
+                DATASET_MINI_IMAGENET,
+                MINI_IMAGENET_VERSION)
+            dataset = VersionedDataset(dataset_path)
+            model = EfficientNetB7()
+            builder = VersionedModelBuilder(dataset, model)
+            builder.publish(publication_path,
+                            name=MODEL_EFFICIENTNETB7,
+                            version=EFFICIENTNETB7_VERSION,
+                            tags=['image'])
+
+    def __contains__(self, item: Any) -> bool:
+        """Returns True if the item is a dataset or model in the pool.
+
+        :param item: The item to test for membership. It can be one of the
+            following.
+                str: Artifact (model or dataset) name.
+                VersionedModel
+                VersionedDataset
+        :return: True if the item is a dataset or model in the pool; False
+            otherwise.
+        """
+        artifact_name = None
+        if isinstance(item, str):
+            artifact_name = item
+        elif isinstance(item, VersionedArtifact):
+            artifact_name = item.name
+        in_pool = False
+        if artifact_name:
+            get_path_fns = (
+                lambda: self.get_model_path(artifact_name),
+                lambda: self.get_dataset_path(artifact_name)
+            )
+            for get_path_fn in get_path_fns:
+                try:
+                    _ = get_path_fn()
+                    in_pool = True
+                except ArtifactNotInPoolError:
+                    pass
+        return in_pool
 
     def add_model(self,
                   model: Model,
                   X_train: np.ndarray,
                   y_train: np.ndarray,
-                  dataset_name: str = 'dataset') -> None:
+                  dataset_name: str = 'dataset') -> str:
         """Adds the model to the pool.
 
         :param model: The model to add to the pool.
         :param X_train: The model's training features.
         :param y_train: The model's training labels.
         :param dataset_name: The name of the dataset. If a dataset with this
-            name already exists, raises a PublicationPathAlreadyExistsError.
+            name already exists, it is assumed to be shared between models and
+            no error is raised.
+        :return: The model's publication path.
         """
-        features = {'X_train': X_train}
-        labels = {'y_train': y_train}
-        dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
-        dataset_publication_path = os.path.join(
-            self.datasets_dirname, dataset_name)
-        try:
-            dataset_builder.publish(dataset_publication_path,
-                                    name=dataset_name,
-                                    version='v1',
-                                    tags=[TAG_USER_MODEL])
-        except PublicationPathAlreadyExistsError:
-            # Allow dataset reuse between models.
-            pass
-        dataset = VersionedDataset(os.path.join(
-            dataset_publication_path, 'v1'))
+        dataset_publication_path = self.add_dataset(
+            X_train, y_train, dataset_name=dataset_name)
+        dataset = VersionedDataset(dataset_publication_path)
         model_builder = VersionedModelBuilder(dataset, model)
-        model_publication_path = os.path.join(self.models_dirname, model.name)
+        publication_base_path = os.path.join(self.models_dirname, model.name)
         try:
-            model_builder.publish(model_publication_path,
-                                  name=model.name,
-                                  version='v1',
-                                  tags=[TAG_USER_MODEL])
+            versioned_path = model_builder.publish(
+                publication_base_path,
+                name=model.name,
+                version='v1',
+                tags=[TAG_USER_MODEL])
         except PublicationPathAlreadyExistsError as err:
             raise PretrainingPoolAlreadyContainsModelError from err
+        return versioned_path
 
     def add_versioned_model(self,
                             model: VersionedModel,
-                            dataset: VersionedDataset) -> None:
+                            dataset: VersionedDataset) -> str:
         """Adds the versioned model to the pool.
 
         :param model: The versioned model.
         :param dataset: The versioned dataset.
+        :return: The model's publication path.
         """
-        if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
-            raise UnrecognizedTrainingDatasetError
-        dataset_publication_path = os.path.join(
-            self.datasets_dirname, dataset.name)
-        republished_dataset_path = os.path.join(
-            dataset_publication_path, dataset.version)
-        try:
-            republished_dataset_path = dataset.republish(
-                dataset_publication_path)
-        except PublicationPathAlreadyExistsError:
-            # Allow dataset reuse between models.
-            pass
+        republished_dataset_path = self.add_versioned_dataset(dataset)
         model_publication_path = os.path.join(self.models_dirname, model.name)
         try:
             republished_model_path = model.republish(model_publication_path)
@@ -213,6 +262,80 @@ class PretrainingPool:
         republished_model = VersionedModel(republished_model_path)
         republished_model.update_metadata(
             {'dataset': republished_dataset_path})
+        return republished_model_path
+
+    def add_dataset(
+            self,
+            X_train: np.ndarray,
+            y_train: np.ndarray,
+            dataset_name: str = 'dataset') -> str:
+        """Adds the dataset to the pool.
+
+        :param X_train: The training features.
+        :param y_train: The training labels.
+        :param dataset_name: The name of the dataset. If a dataset with this
+            name already exists, it is assumed to be shared between models and
+            no error is raised.
+        :return: The dataset's publication path.
+        """
+        features = {'X_train': X_train}
+        labels = {'y_train': y_train}
+        dataset_builder = PathlessVersionedDatasetBuilder(features, labels)
+        publication_base_path = os.path.join(
+            self.datasets_dirname, dataset_name)
+        versioned_path = os.path.join(publication_base_path, 'v1')
+        try:
+            dataset_builder.publish(
+                publication_base_path,
+                name=dataset_name,
+                version='v1',
+                tags=[TAG_USER_MODEL])
+        except PublicationPathAlreadyExistsError:
+            # Allow dataset reuse between models.
+            pass
+        return versioned_path
+
+    def add_versioned_dataset(self, dataset: VersionedDataset) -> str:
+        """Adds the versioned dataset to the pool.
+
+        :param dataset: The versioned dataset.
+        :return: The dataset's publication path.
+        """
+        if not hasattr(dataset, 'X_train') or not hasattr(dataset, 'y_train'):
+            raise UnrecognizedTrainingDatasetError
+        dataset_publication_path = os.path.join(
+            self.datasets_dirname, dataset.name)
+        republished_dataset_path = os.path.join(
+            dataset_publication_path, dataset.version)
+        try:
+            dataset.republish(dataset_publication_path)
+        except PublicationPathAlreadyExistsError:
+            # Allow dataset reuse between models.
+            pass
+        return republished_dataset_path
+
+    def remove_model(self, model_name: str) -> None:
+        """Removes all matching models, including previous versions.
+
+        :param model_name: The name of the model to remove.
+        """
+        if model_name not in self:
+            raise ArtifactNotInPoolError
+        model_path = os.path.join(self.models_dirname, model_name)
+        shutil.rmtree(model_path)
+
+    def remove_dataset(self, dataset_name: str) -> None:
+        """Removes all matching datasets, including previous versions.
+
+        Note that models using the given dataset will not have valid dataset
+        paths after this operation has completed.
+
+        :param dataset_name: The name of the dataset to remove.
+        """
+        if dataset_name not in self:
+            raise ArtifactNotInPoolError
+        dataset_path = os.path.join(self.datasets_dirname, dataset_name)
+        shutil.rmtree(dataset_path)
 
     @staticmethod
     def _argmax_version(artifact_versions: list[str]) -> int:
@@ -228,7 +351,9 @@ class PretrainingPool:
 
     @staticmethod
     def _get_versioned_artifacts(
-            base_dir: str, latest_only: bool = True) -> set[str]:
+            base_dir: str,
+            latest_only: bool = True,
+            filter_names: set[str] | None = None) -> set[str]:
         """Returns the set of versioned artifacts from the base directory.
 
         :param base_dir: The directory containing versioned artifacts; the
@@ -237,9 +362,16 @@ class PretrainingPool:
             of each type. E.g., if there are both mnist_model/v1 and
             mnist_model/v2, return only the path to v2. If False, return all
             paths, regardless of version.
+        :param filter_names: If provided, only return paths to artifacts whose
+            names are in the set.
         """
         artifact_paths = set()
-        for artifact_name in os.listdir(base_dir):
+        artifact_names = os.listdir(base_dir)
+        if filter_names:
+            artifact_names = [
+                artifact_name for artifact_name in artifact_names
+                if artifact_name in filter_names]
+        for artifact_name in artifact_names:
             artifact_path = os.path.join(base_dir, artifact_name)
             artifact_versions = os.listdir(artifact_path)
             if latest_only:
@@ -283,10 +415,150 @@ class PretrainingPool:
         return PretrainingPool._get_versioned_artifacts(
             self.datasets_dirname, latest_only=latest_only)
 
-    def get_pretrained_model(self,
-                             model: Model,
-                             X_train: np.ndarray,
-                             y_train: np.ndarray) -> Model:
+    def get_model_path(self, model_name: str) -> str:
+        """Returns the path to the given model.
+
+        :param model_name: The name of the model in the pool.
+        :return: The path to the model; a VersionedModel path.
+        """
+        # This will return zero or one paths.
+        model_paths = PretrainingPool._get_versioned_artifacts(
+            self.models_dirname, latest_only=True, filter_names={model_name})
+        if not model_paths:
+            raise ArtifactNotInPoolError
+        return list(model_paths)[0]
+
+    def get_dataset_path(self, dataset_name: str) -> str:
+        """Returns the path to the given dataset.
+
+        :param dataset_name: The name of the dataset in the pool.
+        :return: The path to the dataset; a VersionedDataset path.
+        """
+        # This will return zero or one paths.
+        dataset_paths = PretrainingPool._get_versioned_artifacts(
+            self.datasets_dirname,
+            latest_only=True,
+            filter_names={dataset_name})
+        if not dataset_paths:
+            raise ArtifactNotInPoolError
+        return list(dataset_paths)[0]
+
+    def clear(self) -> None:
+        """Removes all models and datasets from the pool."""
+        shutil.rmtree(self.datasets_dirname, ignore_errors=True)
+        shutil.rmtree(self.models_dirname, ignore_errors=True)
+        Path(self.models_dirname).mkdir(parents=True, exist_ok=True)
+        Path(self.datasets_dirname).mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _preprocess_dataset_vgg16(
+            X: np.ndarray,
+            y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the preprocessed X and y for VGG16.
+
+        :param X: The input features in the same format as the model's
+            associated versioned dataset's features.
+        :param y: The input labels in the same format as the model's associated
+            versioned dataset's labels.
+        :return: The preprocessed X and y for VGG16.
+        """
+        X = smart_resize(X, VGG_INPUT_SHAPE)
+        X = preprocess_input_vgg16(X)
+        return X, y
+
+    @staticmethod
+    def _preprocess_dataset_efficientnetb7(
+            X: np.ndarray,
+            y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the preprocessed X and y for EfficientNetB7.
+
+        :param X: The input features in the same format as the model's
+            associated versioned dataset's features.
+        :param y: The input labels in the same format as the model's associated
+            versioned dataset's labels.
+        :return: The preprocessed X and y for EfficientNetB7.
+        """
+        X = smart_resize(X, EFFICIENTNETB7_INPUT_SHAPE)
+        X = preprocess_input_effnet(X)
+        return X, y
+
+    @staticmethod
+    def preprocess_dataset(
+            model_name: str,
+            X: np.ndarray,
+            y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Returns the preprocessed X and y for the given model.
+
+        Some models require their datasets to be preprocessed because the
+        dataset is shared with other models that use a different
+        representation. User models will not have their datasets changed.
+
+        :param model_name: The name of the model whose dataset should be
+            preprocessed. Valid choices are any of the names in
+            OPEN_SOURCE_MODELS.
+        :param X: The input features in the same format as the model's
+            associated versioned dataset's features.
+        :param y: The input labels in the same format as the model's associated
+            versioned dataset's labels.
+        :return: The preprocessed X and y for the given model.
+        """
+        if model_name == MODEL_VGG16:
+            X, y = PretrainingPool._preprocess_dataset_vgg16(X, y)
+        elif model_name == MODEL_EFFICIENTNETB7:
+            X, y = PretrainingPool._preprocess_dataset_efficientnetb7(X, y)
+        return X, y
+
+    @staticmethod
+    def eval_model(
+            versioned_model: VersionedModel,
+            versioned_dataset: VersionedDataset,
+            frac: float = 1.0) -> float | list[float]:
+        """Evaluates the model on the dataset.
+
+        The model and dataset need not be in the pool, but models and datasets
+        recognized by the pool will be preprocessed as necessary.
+
+        :param versioned_model: The model to evaluate. This model need not be
+            in the pool, but if it is a known model, certain preprocessing
+            steps may be applied as necessary.
+        :param versioned_dataset: The dataset on which to evaluate the model.
+        :param frac: The fraction of the dataset on which to run evaluation.
+        :return: The model evaluation results; either a single scalar
+            indicating the loss, or a list of scalars indicating the loss and
+            subsequent metric values, in order of compilation.
+        """
+        X_train = versioned_dataset.X_train
+        y_train = versioned_dataset.y_train
+        samples = int(len(X_train) * frac)
+        X_train = X_train[:samples]
+        y_train = y_train[:samples]
+        X_train, y_train = PretrainingPool.preprocess_dataset(
+            versioned_model.name, X_train, y_train)
+        return versioned_model.model.evaluate(X_train, y_train)
+
+    @staticmethod
+    def compile_model(versioned_model: VersionedModel) -> None:
+        """Compiles the given model.
+
+        Open source models will be compiled using known-good configurations for
+        loss, metrics, etc. This function will raise an error on custom models,
+        since compilation procedures applied to them will likely be wrong.
+
+        :param versioned_model: The open source model to compile. Custom models
+            will raise an error.
+        """
+        if versioned_model.name in (MODEL_VGG16, MODEL_EFFICIENTNETB7):
+            versioned_model.model.compile(
+                loss='categorical_crossentropy',
+                metrics=['accuracy', 'top_k_categorical_accuracy'])
+        else:
+            raise PretrainingPoolCannotCompileCustomModelError
+
+    def get_pretrained_model(
+            self,
+            model: Model,
+            X_train: np.ndarray,
+            y_train: np.ndarray) -> Model:
         """Returns a new instance of the given model with pretrained weights.
 
         Creates a new model of the same architecture as the input, but with the

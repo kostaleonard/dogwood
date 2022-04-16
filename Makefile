@@ -15,7 +15,11 @@ test:
 	coverage xml
 
 test_slow:
-	pytest -m "slowtest" --cov=dogwood tests
+	pytest -m "slowtest and not veryslowtest" --cov=dogwood tests
+	coverage xml
+
+test_veryslow:
+	pytest -m "veryslowtest" --cov=dogwood tests
 	coverage xml
 
 test_full:
