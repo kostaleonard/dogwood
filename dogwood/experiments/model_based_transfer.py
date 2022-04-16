@@ -8,11 +8,11 @@ from dogwood.pretraining.pretraining_pool import PretrainingPool
 def main() -> None:
     """Runs the program."""
     pool = PretrainingPool()
-    print('Models:')
+    print("Models:")
     for model_path in pool.get_available_models():
         print(model_path)
     print()
-    print('Datasets:')
+    print("Datasets:")
     for dataset_path in pool.get_available_datasets():
         print(dataset_path)
     for model_path in pool.get_available_models():
@@ -22,9 +22,10 @@ def main() -> None:
         print(versioned_model.name)
         print(versioned_dataset.name)
         metrics = PretrainingPool.eval_model(
-            versioned_model, versioned_dataset, frac=0.01)
+            versioned_model, versioned_dataset, frac=0.01
+        )
         print(metrics)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

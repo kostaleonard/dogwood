@@ -1,9 +1,14 @@
 """Tests errors.py."""
 
-from dogwood.errors import NotADenseLayerError, \
-    InvalidExpansionStrategyError, PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError, \
-    PretrainingPoolCannotCompileCustomModelError, ArtifactNotInPoolError
+from dogwood.errors import (
+    NotADenseLayerError,
+    InvalidExpansionStrategyError,
+    PretrainingPoolAlreadyContainsModelError,
+    NoSuchOpenSourceModelError,
+    UnrecognizedTrainingDatasetError,
+    PretrainingPoolCannotCompileCustomModelError,
+    ArtifactNotInPoolError,
+)
 
 
 def test_not_a_dense_layer_error_extends_value_error() -> None:
