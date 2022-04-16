@@ -10,15 +10,14 @@ from tensorflow.keras.layers import Layer, Dense
 from tensorflow.keras.initializers import GlorotUniform
 from dogwood.errors import NotADenseLayerError, InvalidExpansionStrategyError
 
-STRATEGY_ALL_ZERO = 'all_zero'
-STRATEGY_OUTPUT_ZERO = 'output_zero'
-STRATEGY_ALL_RANDOM = 'all_random'
+STRATEGY_ALL_ZERO = "all_zero"
+STRATEGY_OUTPUT_ZERO = "output_zero"
+STRATEGY_ALL_RANDOM = "all_random"
 
 
 def are_symmetric_dense_neurons(
-        model: Sequential,
-        layer_name: str,
-        neuron_indices: set[int]) -> bool:
+    model: Sequential, layer_name: str, neuron_indices: set[int]
+) -> bool:
     """Returns True if all of the given neurons are symmetric with each other.
 
     We define "neuron symmetry" as two or more neurons computing the (exact)
@@ -38,7 +37,8 @@ def are_symmetric_dense_neurons(
     """
     # pylint: disable=too-many-locals
     layer_in, layer_out = _get_layer_input_and_output_by_name(
-        model, layer_name)
+        model, layer_name
+    )
     if not isinstance(layer_in, Dense):
         raise NotADenseLayerError
     if layer_out and not isinstance(layer_out, Dense):
@@ -50,28 +50,35 @@ def are_symmetric_dense_neurons(
     weights_out = np.array([]) if not layer_out else layer_out.get_weights()[0]
     weights_in_neurons = [weights_in[:, idx] for idx in neuron_indices]
     biases_in_neurons = [biases_in[idx] for idx in neuron_indices]
-    weights_out_neurons = [] if not layer_out else [
-        weights_out[idx, :] for idx in neuron_indices]
+    weights_out_neurons = (
+        []
+        if not layer_out
+        else [weights_out[idx, :] for idx in neuron_indices]
+    )
     for weights_in_neurons_1, weights_in_neurons_2 in combinations(
-            weights_in_neurons, 2):
+        weights_in_neurons, 2
+    ):
         if not np.isclose(weights_in_neurons_1, weights_in_neurons_2).all():
             return False
     for biases_in_neurons_1, biases_in_neurons_2 in combinations(
-            biases_in_neurons, 2):
+        biases_in_neurons, 2
+    ):
         if not np.isclose(biases_in_neurons_1, biases_in_neurons_2):
             return False
     for weights_out_neurons_1, weights_in_neurons_2 in combinations(
-            weights_out_neurons, 2):
+        weights_out_neurons, 2
+    ):
         if not np.isclose(weights_out_neurons_1, weights_in_neurons_2).all():
             return False
     return True
 
 
 def expand_dense_layer(
-        model: Sequential,
-        layer_name: str,
-        num_new_neurons: int,
-        strategy: str = STRATEGY_OUTPUT_ZERO) -> Sequential:
+    model: Sequential,
+    layer_name: str,
+    num_new_neurons: int,
+    strategy: str = STRATEGY_OUTPUT_ZERO,
+) -> Sequential:
     """Returns a new model with additional neurons in the given dense layer.
 
     Used to update only a single layer. While expanding several layers in a
@@ -112,10 +119,14 @@ def expand_dense_layer(
     """
     # pylint: disable=too-many-locals
     if strategy not in {
-            STRATEGY_ALL_ZERO, STRATEGY_OUTPUT_ZERO, STRATEGY_ALL_RANDOM}:
+        STRATEGY_ALL_ZERO,
+        STRATEGY_OUTPUT_ZERO,
+        STRATEGY_ALL_RANDOM,
+    }:
         raise InvalidExpansionStrategyError
     layer_in, layer_out = _get_layer_input_and_output_by_name(
-        model, layer_name)
+        model, layer_name
+    )
     if not isinstance(layer_in, Dense):
         raise NotADenseLayerError
     if layer_out and not isinstance(layer_out, Dense):
@@ -132,15 +143,19 @@ def expand_dense_layer(
             if strategy == STRATEGY_ALL_ZERO:
                 new_weights = np.concatenate(
                     (weights, np.zeros((len(weights), num_new_neurons))),
-                    axis=1)
+                    axis=1,
+                )
             else:
                 new_weights_shape = (
-                    len(weights), weights.shape[1] + num_new_neurons)
+                    len(weights),
+                    weights.shape[1] + num_new_neurons,
+                )
                 initialization = glorot(new_weights_shape)[:, :num_new_neurons]
                 new_weights = np.concatenate((weights, initialization), axis=1)
             new_biases = np.concatenate(
-                (biases, np.zeros(num_new_neurons)), axis=0)
-            replace = {'units': layer.units + num_new_neurons}
+                (biases, np.zeros(num_new_neurons)), axis=0
+            )
+            replace = {"units": layer.units + num_new_neurons}
             new_layer = clone_layer(layer, replace=replace)
             expanded.add(new_layer)
             new_layer.set_weights([new_weights, new_biases])
@@ -150,13 +165,16 @@ def expand_dense_layer(
             biases = weights_and_biases[1]
             if strategy == STRATEGY_ALL_RANDOM:
                 new_weights_shape = (
-                    len(weights) + num_new_neurons, weights.shape[1])
+                    len(weights) + num_new_neurons,
+                    weights.shape[1],
+                )
                 initialization = glorot(new_weights_shape)[:num_new_neurons, :]
                 new_weights = np.concatenate((weights, initialization), axis=0)
             else:
                 new_weights = np.concatenate(
                     (weights, np.zeros((num_new_neurons, weights.shape[1]))),
-                    axis=0)
+                    axis=0,
+                )
             new_layer = clone_layer(layer)
             expanded.add(new_layer)
             new_layer.set_weights([new_weights, biases])
@@ -168,9 +186,10 @@ def expand_dense_layer(
 
 
 def expand_dense_layers(
-        model: Sequential,
-        layer_names_and_neurons: dict[str, int],
-        strategy: str = STRATEGY_OUTPUT_ZERO) -> Sequential:
+    model: Sequential,
+    layer_names_and_neurons: dict[str, int],
+    strategy: str = STRATEGY_OUTPUT_ZERO,
+) -> Sequential:
     """Returns a new model with additional neurons in the given dense layers.
 
     Used to update multiple layers in a network. The layers are traversed by
@@ -197,12 +216,14 @@ def expand_dense_layers(
                 expanded,
                 layer.name,
                 layer_names_and_neurons[layer.name],
-                strategy=strategy)
+                strategy=strategy,
+            )
     return expanded
 
 
 def _get_layer_input_and_output_by_name(
-        model: Sequential, layer_name: str) -> tuple[Layer, Layer | None]:
+    model: Sequential, layer_name: str
+) -> tuple[Layer, Layer | None]:
     """Returns the requested layer and the subsequent layer, if it exists.
 
     :param model: The model in which to find the layer.
@@ -212,14 +233,15 @@ def _get_layer_input_and_output_by_name(
     layer_names = [layer.name for layer in model.layers]
     layer_idx = layer_names.index(layer_name)
     layer_in = model.layers[layer_idx]
-    layer_out = None if layer_idx == len(model.layers) - 1 else \
-        model.layers[layer_idx + 1]
+    layer_out = (
+        None
+        if layer_idx == len(model.layers) - 1
+        else model.layers[layer_idx + 1]
+    )
     return layer_in, layer_out
 
 
-def clone_layer(
-        layer: Layer,
-        replace: dict[str, Any] | None = None) -> Layer:
+def clone_layer(layer: Layer, replace: dict[str, Any] | None = None) -> Layer:
     """Returns a new instance of the layer's class with the same configuration.
 
     :param layer: The layer to clone.
