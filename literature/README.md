@@ -67,6 +67,32 @@ This directory contains the literature review and associated files.
     Challenges the paradigm in the computer vision community that one must use
     pretrained networks to achieve SOTA results.
 
+1. [Wei, 2018. Transfer Learning via Learning to Transfer](http://proceedings.mlr.press/v80/wei18a/wei18a.pdf)
+
+    Learns to perform feature-based transfer from previous transfer learning
+    experiences.
+
+1. [Wang, 2019. Characterizing and Avoiding Negative Transfer](https://openaccess.thecvf.com/content_CVPR_2019/papers/Wang_Characterizing_and_Avoiding_Negative_Transfer_CVPR_2019_paper.pdf)
+
+    Provides a mathematical definition for negative transfer and proposes an
+    improvement to adversarial feature extractors for transfer learning to avoid
+    it.
+
+1. [Devlin, 2019. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/pdf/1810.04805.pdf&usg=ALkJrhhzxlCL6yTht2BRmH9atgvKFxHsxQ)
+
+    Introduces BERT, a pre-trained bidirectional transformer model that can be
+    fine-tuned to achieve SOTA results on many NLP benchmarks.
+
+1. [Chronopoulou, 2019. An embarrassingly simple approach for transfer learning from pretrained language models](https://arxiv.org/pdf/1902.10547.pdf)
+
+    Adds a generic loss term during fine-tuning of language models to prevent
+    models from forgetting task-agnostic features.
+
+1. [Wong, 2018. Transfer Learning with Neural AutoML](https://proceedings.neurips.cc/paper/2018/file/bdb3c278f45e6734c35733d24299d3f4-Paper.pdf)
+
+    Uses model-based deep transfer learning and task embeddings to design a
+    neural architecture search model that rapidly converges on new tasks.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
@@ -235,6 +261,8 @@ sharing. [Zhuang, 2020. A Comprehensive Survey on Transfer Learning](https://arx
     * Weight freezing: When training on the new task, the layers whose weights
     were transferred from a pretrained model are not updated. Using frozen
     features preserved generality.
+    
+    Note: Not all researchers make this distinction.
 
 * Fragile co-adaptation: The phenomenon that features in successive layers of a
 neural network interact with each other in a complex or fragile way such that
@@ -255,6 +283,9 @@ target domain, or the source task is not equal to the target task. But what
 about when both the domain and task are identical for source and target, but we
 want to try a new model architecture on a fraction of the data or without
 training from scratch? These definitions do not account for such a goal.
+
+* Could embeddings, e.g., task embeddings, be considered parameter-based
+transfer learning techniques?
 
 ## Thoughts
 
