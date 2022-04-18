@@ -88,6 +88,11 @@ This directory contains the literature review and associated files.
     Adds a generic loss term during fine-tuning of language models to prevent
     models from forgetting task-agnostic features.
 
+1. [Wong, 2018. Transfer Learning with Neural AutoML](https://proceedings.neurips.cc/paper/2018/file/bdb3c278f45e6734c35733d24299d3f4-Paper.pdf)
+
+    Uses model-based deep transfer learning and task embeddings to design a
+    neural architecture search model that rapidly converges on new tasks.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
@@ -278,6 +283,9 @@ target domain, or the source task is not equal to the target task. But what
 about when both the domain and task are identical for source and target, but we
 want to try a new model architecture on a fraction of the data or without
 training from scratch? These definitions do not account for such a goal.
+
+* Could embeddings, e.g., task embeddings, be considered parameter-based
+transfer learning techniques?
 
 ## Thoughts
 
