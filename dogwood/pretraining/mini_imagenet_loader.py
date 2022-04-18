@@ -2,8 +2,8 @@
 
 import kaggle
 
-MINI_IMAGENET_DATASET = 'ifigotin/imagenetmini-1000'
-MINI_IMAGENET_DIRNAME = 'imagenet-mini'
+MINI_IMAGENET_DATASET = "ifigotin/imagenetmini-1000"
+MINI_IMAGENET_DIRNAME = "imagenet-mini"
 
 
 def download_mini_imagenet(save_path: str) -> None:
@@ -12,4 +12,5 @@ def download_mini_imagenet(save_path: str) -> None:
     :param save_path: The directory to which to save the dataset.
     """
     kaggle.api.dataset_download_files(
-        MINI_IMAGENET_DATASET, path=save_path, quiet=False, unzip=True)
+        MINI_IMAGENET_DATASET, path=save_path, quiet=False, unzip=True
+    )

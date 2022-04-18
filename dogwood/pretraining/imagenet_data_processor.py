@@ -20,9 +20,11 @@ from mlops.dataset.invertible_data_processor import InvertibleDataProcessor
 IMAGE_SCALE_HEIGHT = 256
 IMAGE_SCALE_WIDTH = 256
 IMAGE_TARGET_SIZE = (IMAGE_SCALE_HEIGHT, IMAGE_SCALE_WIDTH)
-CLASS_INDEX_PATH = ('https://storage.googleapis.com/download.tensorflow.org/'
-                    'data/imagenet_class_index.json')
-CLASS_INDEX_HASH = 'c2c37ea517e94d9795004a39431a14cb'
+CLASS_INDEX_PATH = (
+    "https://storage.googleapis.com/download.tensorflow.org/"
+    "data/imagenet_class_index.json"
+)
+CLASS_INDEX_HASH = "c2c37ea517e94d9795004a39431a14cb"
 
 
 class ImageNetDataProcessor(InvertibleDataProcessor):
@@ -32,7 +34,8 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         """Instantiates the object."""
         self.class_index = ImageNetDataProcessor.get_class_index()
         self.designator_index = ImageNetDataProcessor.get_designator_index(
-            self.class_index)
+            self.class_index
+        )
 
     @staticmethod
     def get_class_index() -> dict[str, list[str]]:
@@ -44,16 +47,18 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
             'n01440764') and the class name (e.g., 'tench').
         """
         file_path = get_file(
-            'imagenet_class_index.json',
+            "imagenet_class_index.json",
             CLASS_INDEX_PATH,
-            cache_subdir='models',
-            file_hash=CLASS_INDEX_HASH)
-        with open(file_path, 'r', encoding='utf-8') as infile:
+            cache_subdir="models",
+            file_hash=CLASS_INDEX_HASH,
+        )
+        with open(file_path, "r", encoding="utf-8") as infile:
             return json.loads(infile.read())
 
     @staticmethod
     def get_designator_index(
-            class_index: dict[str, list[str]]) -> dict[str, str]:
+        class_index: dict[str, list[str]]
+    ) -> dict[str, str]:
         """Returns the ImageNet designator index.
 
         :param class_index: The ImageNet class index.
@@ -61,12 +66,15 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
             class designators (e.g., 'n01440764') and whose values are the
             class indices as strings (i.e., '0', '1', ..., '999').
         """
-        return {designator_and_name[0]: idx
-                for idx, designator_and_name in class_index.items()}
+        return {
+            designator_and_name[0]: idx
+            for idx, designator_and_name in class_index.items()
+        }
 
     @staticmethod
     def _get_raw_features_and_labels_subset(
-            subset_path: str) -> tuple[np.ndarray, np.ndarray]:
+        subset_path: str,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Returns the raw features and labels from the subset path.
 
         :param subset_path: The path to the train/val/test subset.
@@ -88,8 +96,9 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         subset_labels = np.array(subset_labels)
         return subset_features, subset_labels
 
-    def get_raw_features_and_labels(self, dataset_path: str) -> \
-            tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    def get_raw_features_and_labels(
+        self, dataset_path: str
+    ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """Returns the raw feature and label tensors from the dataset path.
         This method is specifically used for the train/val/test sets and not
         input data for prediction, because in some cases the features and
@@ -111,15 +120,18 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
         """
         features = {}
         labels = {}
-        for subset in 'train', 'val', 'test':
+        for subset in "train", "val", "test":
             subset_path = os.path.join(dataset_path, subset)
             if not os.path.exists(subset_path):
                 continue
-            subset_features, subset_labels = \
-                ImageNetDataProcessor._get_raw_features_and_labels_subset(
-                    subset_path)
-            features_key = f'X_{subset}'
-            labels_key = f'y_{subset}'
+            (
+                subset_features,
+                subset_labels,
+            ) = ImageNetDataProcessor._get_raw_features_and_labels_subset(
+                subset_path
+            )
+            features_key = f"X_{subset}"
+            labels_key = f"y_{subset}"
             features[features_key] = subset_features
             labels[labels_key] = subset_labels
         return features, labels
@@ -144,19 +156,23 @@ class ImageNetDataProcessor(InvertibleDataProcessor):
             'X_val', 'X_test', 'X_pred'}.
         """
         features = {}
-        for subset in 'train', 'val', 'test', 'pred':
+        for subset in "train", "val", "test", "pred":
             subset_path = os.path.join(dataset_path, subset)
             if not os.path.exists(subset_path):
                 continue
-            subset_features, _ = \
-                ImageNetDataProcessor._get_raw_features_and_labels_subset(
-                    subset_path)
-            features_key = f'X_{subset}'
+            (
+                subset_features,
+                _,
+            ) = ImageNetDataProcessor._get_raw_features_and_labels_subset(
+                subset_path
+            )
+            features_key = f"X_{subset}"
             features[features_key] = subset_features
         return features
 
     def preprocess_features(
-            self, raw_feature_tensor: np.ndarray) -> np.ndarray:
+        self, raw_feature_tensor: np.ndarray
+    ) -> np.ndarray:
         """Returns the preprocessed feature tensor from the raw tensor. The
         preprocessed features are how training/validation/test as well as
         prediction data are fed into downstream models. The preprocessed

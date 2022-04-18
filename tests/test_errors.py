@@ -1,8 +1,14 @@
 """Tests errors.py."""
 
-from dogwood.errors import NotADenseLayerError, \
-    InvalidExpansionStrategyError, PretrainingPoolAlreadyContainsModelError, \
-    NoSuchOpenSourceModelError, UnrecognizedTrainingDatasetError
+from dogwood.errors import (
+    NotADenseLayerError,
+    InvalidExpansionStrategyError,
+    PretrainingPoolAlreadyContainsModelError,
+    NoSuchOpenSourceModelError,
+    UnrecognizedTrainingDatasetError,
+    PretrainingPoolCannotCompileCustomModelError,
+    ArtifactNotInPoolError,
+)
 
 
 def test_not_a_dense_layer_error_extends_value_error() -> None:
@@ -33,4 +39,18 @@ def test_no_such_open_source_model_error_extends_value_error() -> None:
 def test_unrecognized_training_dataset_error_extends_value_error() -> None:
     """Tests that UnrecognizedTrainingDatasetError extends ValueError."""
     err = UnrecognizedTrainingDatasetError()
+    assert isinstance(err, ValueError)
+
+
+def test_cannot_compile_model_error_extends_value_error() -> None:
+    """Tests that PretrainingPoolCannotCompileCustomModelError extends
+    ValueError."""
+    err = PretrainingPoolCannotCompileCustomModelError()
+    assert isinstance(err, ValueError)
+
+
+def test_artifact_not_in_pool_error_extends_value_error() -> None:
+    """Tests that ArtifactNotInPoolError extends
+    ValueError."""
+    err = ArtifactNotInPoolError()
     assert isinstance(err, ValueError)
