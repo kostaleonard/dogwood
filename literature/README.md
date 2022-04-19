@@ -93,6 +93,11 @@ This directory contains the literature review and associated files.
     Uses model-based deep transfer learning and task embeddings to design a
     neural architecture search model that rapidly converges on new tasks.
 
+1. [Wang, 2020. K-ADAPTER: Infusing Knowledge into Pre-Trained Models with Adapters](https://arxiv.org/pdf/2002.01808.pdf)
+
+    Introduces the adapter module, a plug-in subnetwork for transformer
+    architectures, to improve performance in the multi-task NLP setting.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
