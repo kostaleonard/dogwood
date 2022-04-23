@@ -35,3 +35,10 @@ package_test:
 	rm -rf dist
 	python3 -m build
 	python3 -m twine upload --repository testpypi dist/*
+
+hello_opencl:
+	clang -framework OpenCL -o bin/hello_opencl dogwood/acceleration/hello_opencl.c
+	./bin/hello_opencl
+
+clean:
+	rm -f bin/hello_opencl
