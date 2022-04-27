@@ -98,6 +98,11 @@ This directory contains the literature review and associated files.
     Introduces the adapter module, a plug-in subnetwork for transformer
     architectures, to improve performance in the multi-task NLP setting.
 
+1. [Vaswani, 2017. Attention Is All You Need](https://proceedings.neurips.cc/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf)
+
+    Introduces the Transformer architecture based on stacked
+    attention/self-attention layers.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
