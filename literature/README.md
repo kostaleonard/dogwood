@@ -103,6 +103,12 @@ This directory contains the literature review and associated files.
     Introduces the Transformer architecture based on stacked
     attention/self-attention layers.
 
+1. [Frankle, 2019. The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks](https://arxiv.org/pdf/1803.03635.pdf?ref=https://githubhelp.com)
+
+    Proposes the Lottery Ticket Hypothesis, according to which any sufficiently
+    large, randomly initialized dense network contains a subnetwork that, when
+    trained, matches the accuracy of the original network.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
