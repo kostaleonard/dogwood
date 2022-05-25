@@ -109,6 +109,11 @@ This directory contains the literature review and associated files.
     large, randomly initialized dense network contains a subnetwork that, when
     trained, matches the accuracy of the original network.
 
+1. [Tolstikhin, 2021. MLP-Mixer: An all-MLP architecture for vision](https://proceedings.neurips.cc/paper/2021/file/cba0a4ee5ccd02fda0fe3f9a3e7b89fe-Paper.pdf)
+
+    Demonstrates competitive (near-SOTA) results on ImageNet using only dense
+    layers, with some additional transformations to achieve position-invariance.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
