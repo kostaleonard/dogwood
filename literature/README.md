@@ -93,6 +93,33 @@ This directory contains the literature review and associated files.
     Uses model-based deep transfer learning and task embeddings to design a
     neural architecture search model that rapidly converges on new tasks.
 
+1. [Wang, 2020. K-ADAPTER: Infusing Knowledge into Pre-Trained Models with Adapters](https://arxiv.org/pdf/2002.01808.pdf)
+
+    Introduces the adapter module, a plug-in subnetwork for transformer
+    architectures, to improve performance in the multi-task NLP setting.
+
+1. [Vaswani, 2017. Attention Is All You Need](https://proceedings.neurips.cc/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf)
+
+    Introduces the Transformer architecture based on stacked
+    attention/self-attention layers.
+
+1. [Frankle, 2019. The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks](https://arxiv.org/pdf/1803.03635.pdf?ref=https://githubhelp.com)
+
+    Proposes the Lottery Ticket Hypothesis, according to which any sufficiently
+    large, randomly initialized dense network contains a subnetwork that, when
+    trained, matches the accuracy of the original network.
+
+1. [Tolstikhin, 2021. MLP-Mixer: An all-MLP architecture for vision](https://proceedings.neurips.cc/paper/2021/file/cba0a4ee5ccd02fda0fe3f9a3e7b89fe-Paper.pdf)
+
+    Demonstrates competitive (near-SOTA) results on ImageNet using only dense
+    layers, with some additional transformations to achieve position-invariance.
+
+1. [CvT: Introducing Convolutions to Vision Transformers](https://openaccess.thecvf.com/content/ICCV2021/papers/Wu_CvT_Introducing_Convolutions_to_Vision_Transformers_ICCV_2021_paper.pdf)
+
+    Achieves SOTA performance on ImageNet by extending the Transformer
+    architecture using convolutional token embeddings and convolutional
+    projections for attention.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
