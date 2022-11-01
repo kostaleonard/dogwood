@@ -21,6 +21,12 @@ This directory contains the literature review and associated files.
 
     Defines and categorizes deep transfer learning.
 
+1. [O'Neill, 2020. An overview of neural network compression](https://arxiv.org/pdf/2006.03669.pdf).
+
+    Discusses common approaches for neural network compression, including
+    weight sharing, pruning, decomposition, knowledge distillation, and
+    quantization.
+
 ## Topic papers
 
 1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)

@@ -14,3 +14,5 @@ matplotlib
 sklearn
 numpy
 kaggle
+plotly
+pandas
