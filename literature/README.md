@@ -120,7 +120,7 @@ This directory contains the literature review and associated files.
     Demonstrates competitive (near-SOTA) results on ImageNet using only dense
     layers, with some additional transformations to achieve position-invariance.
 
-1. [Wu, 2021. CvT: Introducing Convolutions to Vision Transformers](https://openaccess.thecvf.com/content/ICCV2021/papers/Wu_CvT_Introducing_Convolutions_to_Vision_Transformers_ICCV_2021_paper.pdf)
+1. [Wu, 2021. sciCvT: Introducing Convolutions to Vision Transformers](https://openaccess.thecvf.com/content/ICCV2021/papers/Wu_CvT_Introducing_Convolutions_to_Vision_Transformers_ICCV_2021_paper.pdf)
 
     Achieves SOTA performance on ImageNet by extending the Transformer
     architecture using convolutional token embeddings and convolutional
@@ -131,6 +131,11 @@ This directory contains the literature review and associated files.
     Uses a pretrained large language model to generate Chain of Thought answers
     for unlabeled questions, then fine-tunes the model on high-confidence
     answers to achieve SOTA performance on several NLP benchmarks.
+
+1. [Howard, 2018. Universal Language Model Fine-tuning for Text Classification](https://arxiv.org/pdf/1801.06146.pdf)
+
+    Proposes universal language model fine-tuning (ULMFiT), a procedure for
+    reliable transfer learning on any NLP task.
 
 ## Books
 
