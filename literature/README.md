@@ -137,6 +137,12 @@ This directory contains the literature review and associated files.
     Proposes universal language model fine-tuning (ULMFiT), a procedure for
     reliable transfer learning on any NLP task.
 
+1. [Shazeer, 2017. Outrageously Large Neural Networks: The Sparsely-gated Mixture-of-experts Layer](https://arxiv.org/pdf/1701.06538.pdf%22%20%5Ct%20%22_blank)
+
+    Introduces a conditional layer that allows users to dramatically increase
+    the capacity of distributed neural networks without an increase in
+    computation.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
