@@ -143,6 +143,11 @@ This directory contains the literature review and associated files.
     the capacity of distributed neural networks without an increase in
     computation.
 
+1. [Wei, 2022. Chain-of-Thought Prompting Elicits Reasoning in Large Language Models](https://arxiv.org/pdf/2201.11903.pdf)
+
+    Provides intermediate reasoning steps as part of large language model
+    prompts to enhance few-shot learning on semantic reasoning tasks.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
