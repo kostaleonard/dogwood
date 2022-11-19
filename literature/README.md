@@ -21,6 +21,12 @@ This directory contains the literature review and associated files.
 
     Defines and categorizes deep transfer learning.
 
+1. [O'Neill, 2020. An overview of neural network compression](https://arxiv.org/pdf/2006.03669.pdf).
+
+    Discusses common approaches for neural network compression, including
+    weight sharing, pruning, decomposition, knowledge distillation, and
+    quantization.
+
 ## Topic papers
 
 1. [Yosinski, 2014. How transferable are features in deep neural networks?](https://proceedings.neurips.cc/paper/2014/file/375c71349b295fbe2dcdca9206f20a06-Paper.pdf)
@@ -114,11 +120,33 @@ This directory contains the literature review and associated files.
     Demonstrates competitive (near-SOTA) results on ImageNet using only dense
     layers, with some additional transformations to achieve position-invariance.
 
-1. [CvT: Introducing Convolutions to Vision Transformers](https://openaccess.thecvf.com/content/ICCV2021/papers/Wu_CvT_Introducing_Convolutions_to_Vision_Transformers_ICCV_2021_paper.pdf)
+1. [Wu, 2021. sciCvT: Introducing Convolutions to Vision Transformers](https://openaccess.thecvf.com/content/ICCV2021/papers/Wu_CvT_Introducing_Convolutions_to_Vision_Transformers_ICCV_2021_paper.pdf)
 
     Achieves SOTA performance on ImageNet by extending the Transformer
     architecture using convolutional token embeddings and convolutional
     projections for attention.
+
+1. [Huang, 2022. Large Language Models Can Self-Improve](https://arxiv.org/pdf/2210.11610.pdf)
+
+    Uses a pretrained large language model to generate Chain of Thought answers
+    for unlabeled questions, then fine-tunes the model on high-confidence
+    answers to achieve SOTA performance on several NLP benchmarks.
+
+1. [Howard, 2018. Universal Language Model Fine-tuning for Text Classification](https://arxiv.org/pdf/1801.06146.pdf)
+
+    Proposes universal language model fine-tuning (ULMFiT), a procedure for
+    reliable transfer learning on any NLP task.
+
+1. [Shazeer, 2017. Outrageously Large Neural Networks: The Sparsely-gated Mixture-of-experts Layer](https://arxiv.org/pdf/1701.06538.pdf%22%20%5Ct%20%22_blank)
+
+    Introduces a conditional layer that allows users to dramatically increase
+    the capacity of distributed neural networks without an increase in
+    computation.
+
+1. [Wei, 2022. Chain-of-Thought Prompting Elicits Reasoning in Large Language Models](https://arxiv.org/pdf/2201.11903.pdf)
+
+    Provides intermediate reasoning steps as part of large language model
+    prompts to enhance few-shot learning on semantic reasoning tasks.
 
 ## Books
 
