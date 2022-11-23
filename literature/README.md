@@ -148,6 +148,13 @@ This directory contains the literature review and associated files.
     Provides intermediate reasoning steps as part of large language model
     prompts to enhance few-shot learning on semantic reasoning tasks.
 
+1. [Brown, 2020. Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165.pdf)
+
+    Introduces GPT-3 and explains how language models can generalize to many
+    tasks in the few-shot, one-shot, and zero-shot settings. See appendices and
+    [HuggingFace GPT-Neo](https://huggingface.co/blog/few-shot-learning-gpt-neo-and-inference-api)
+    for example few-shot prompts.
+
 ## Books
 
 1. [Yang, 2020. Transfer Learning](https://doi.org/10.1017/9781139061773)
